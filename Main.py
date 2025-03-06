@@ -6,7 +6,7 @@ from bson import ObjectId
 from typing import List, Optional
 from fastapi.staticfiles import StaticFiles
 import ipaddress
-from utils import route_scan, router_connection_test, get_subnet_utilization
+from utils import route_scan, router_connection_test, get_subnet_utilization, validate_ip, validate_prefix_length
 
 # data structure used is tree for the subnets, each subnet can have many children. The link between the node and its parent is "subnet_parent".
 
@@ -99,6 +99,27 @@ async def add_router(router: Router):
     router_dict = router.model_dump()
     await router_collection.insert_one(router_dict)
     return {"message": "Router added successfully"}
+
+
+# Update Router
+@app.put("/routers/{router_id}")
+async def update_router(router_id: str, updateData: dict):
+    object_id = ObjectId(router_id)  # Convert to ObjectId
+    router = await router_collection.find_one({"_id": object_id})
+
+
+    if not router:
+        raise HTTPException(status_code=404, detail="Router not found")
+
+    update_data = {
+        "router_name": updateData['router_name'],
+        "router_username": updateData['router_username'],
+        "router_password": updateData['router_password'],
+        "router_vendor": updateData['router_vendor']
+    }
+
+    await router_collection.update_one({"_id": router["_id"]},{"$set": update_data})
+    return {"success": True}
 
 
 
@@ -223,11 +244,15 @@ async def delete_subnets(subnet_ids: List[str]):
 
 
 # Update a subnet
-@app.put("/subnets/{subnet_id}-{subnet_mask}")
-async def update_subnet(subnet_id: str, subnet_mask: str, updateData: dict):
+@app.put("/subnets/{subnet_id}")
+async def update_subnet(subnet_id: str, updateData: dict):
 
-    subnet_prefix = f"{subnet_id}/{subnet_mask}"
-    existing_subnet = await collection.find_one({"subnet_prefix": subnet_prefix})
+    object_id = ObjectId(subnet_id)  # Convert to ObjectId
+    existing_subnet = await collection.find_one({"_id": object_id})
+
+
+    # subnet_prefix = f"{subnet_id}/{subnet_mask}"
+    # existing_subnet = await collection.find_one({"subnet_prefix": subnet_prefix})
 
     subnet_name = updateData["subnet_name"]
     subnet_service = updateData["subnet_service"]
@@ -237,21 +262,14 @@ async def update_subnet(subnet_id: str, subnet_mask: str, updateData: dict):
         raise HTTPException(status_code=404, detail="Subnet not found")
 
     update_data = {
-        "subnet_prefix": existing_subnet['subnet_prefix'],
-        "subnet_id": existing_subnet['subnet_id'],
-        "subnet_mask": existing_subnet['subnet_mask'],
-        "subnet_root": existing_subnet['subnet_root'],
-        "subnet_parent": existing_subnet['subnet_parent'],
         "subnet_name": subnet_name,
         "subnet_service": subnet_service,
-        "offline_utilization": existing_subnet['offline_utilization'],
-        "online_status": existing_subnet['online_status'],
-        "online_utilization": existing_subnet['online_utilization']
     }
 
     await collection.update_one({"_id": existing_subnet["_id"]},{"$set": update_data})
 
-    return {"message": "Subnet updated successfully"}
+    return {"success": True}
+    # return {"message": "Subnet updated successfully"}
 
 
 
@@ -264,30 +282,27 @@ async def scan_subnet(data: dict):
     if not existing_subnet:
         raise HTTPException(status_code=404, detail="Subnet not found")
 
-    router = await router_collection.find().to_list(length=1)   #return the first router
+    routers = await router_collection.find().to_list()   #return the two routers
 
-    if not router:
+    if not routers:
         return {"message": "Router not found, please add router first to scan online"}
 
-    router = router[0]
-
+    router = routers[0]
     router_vendor = router['router_vendor']
-
     device_info = {"hostname": router['router_ip'], "username": router['router_username'], "password": router['router_password'] }
+
+    # If connection failed to the main router, proceed to the backup router if exists.
+    if (not router_connection_test(router_vendor, **device_info)) and routers[1]:
+        router = routers[1]
+        router_vendor = router['router_vendor']
+        device_info = {"hostname": router['router_ip'], "username": router['router_username'], "password": router['router_password'] }
+
 
     scan_result = route_scan(subnet_prefix, router_vendor, **device_info)
 
     # If route successfully was queried from the router, then update the scan results with online status and utilization.
     if scan_result['status']:
         update_data = {
-            "subnet_prefix": existing_subnet['subnet_prefix'],
-            "subnet_id": existing_subnet['subnet_id'],
-            "subnet_mask": existing_subnet['subnet_mask'],
-            "subnet_root": existing_subnet['subnet_root'],
-            "subnet_parent": existing_subnet['subnet_parent'],
-            "subnet_name": existing_subnet['subnet_name'],
-            "subnet_service": existing_subnet['subnet_service'],
-            "offline_utilization": existing_subnet['offline_utilization'],
             "online_status": scan_result['online_status'],
             "online_utilization": scan_result['online_utilization']
         }
@@ -313,6 +328,20 @@ async def add_subnet_form(request: Request, major_subnet_id: str, major_subnet_m
 # Add subnet under Upper subnet
 @app.post("/subnets/{upper_subnet_id}-{upper_subnet_mask}/add-subnet")
 async def add_subnet(upper_subnet_id: str, upper_subnet_mask: str, subnet: Subnet):
+
+    # removing white spaces for the new subnet
+    subnet.subnet_id = subnet.subnet_id.strip()
+    subnet.subnet_mask = subnet.subnet_mask.strip()
+    subnet.subnet_prefix = f"{subnet.subnet_id}/{subnet.subnet_mask}"
+
+
+    # Validate subnet_id is an IP address format
+    if not validate_ip(subnet.subnet_id):
+        raise HTTPException(status_code=400, detail="Wrong subnet ID!")
+
+    # Validating subnet mask/prefix-length in the range from 0 to 32
+    if not validate_prefix_length(subnet.subnet_mask):
+        raise HTTPException(status_code=400, detail="Wrong subnet Mask, Please input mask in range (0 to 32) !")
 
     # Forming upper subnet prefix
     upper_subnet_prefix = f"{upper_subnet_id}/{upper_subnet_mask}"

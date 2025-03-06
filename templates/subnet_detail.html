@@ -22,6 +22,7 @@
             location.reload();
         }
 
+
         async function deleteSelected() {
             let selected = [...document.querySelectorAll(".subnet-checkbox:checked")].map(cb => cb.value);
             if (selected.length === 0) {
@@ -40,31 +41,70 @@
             location.reload();
         }
 
-        async function updateSubnet(subnetId, subnetMask, subnetName, subnetService) {
-            let subnet_name = prompt("Enter new name:", subnetName);
-            let subnet_service = prompt("Enter new service:", subnetService);
-
-            if (!subnet_name || !subnet_service) {
-                alert("Update canceled.");
-                return;
-            }
-            if (subnet_name === subnetName && subnet_service === subnetService) {
-                alert("No changes detected. Update canceled.");
+        async function deleteSelected() {
+            let selected = [...document.querySelectorAll(".subnet-checkbox:checked")].map(cb => cb.value);
+            if (selected.length === 0) {
+                alert("No subnets selected!");
                 return;
             }
 
-            const response = await fetch(`/subnets/${subnetId}-${subnetMask}`, {  // Updated URL
-                method: "PUT",
+            const response = await fetch("/subnets/", {
+                method: "DELETE",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    subnet_name: subnet_name,
-                    subnet_service: subnet_service
-                })
+                body: JSON.stringify(selected)
             });
 
             const result = await response.json();
             alert(result.message || result.detail);
-            location.reload();        }
+            location.reload();
+        }
+
+
+        function enableEdit(subnetId) {
+            document.getElementById(`subnet_name-text-${subnetId}`).style.display = "none";
+            document.getElementById(`subnet_name-input-${subnetId}`).style.display = "inline";
+
+            document.getElementById(`subnet_service-text-${subnetId}`).style.display = "none";
+            document.getElementById(`subnet_service-input-${subnetId}`).style.display = "inline";
+
+            document.getElementById(`edit-btn-${subnetId}`).style.display = "none";
+            document.getElementById(`save-btn-${subnetId}`).style.display = "inline";
+
+        }
+
+        function saveChanges(subnetId) {
+            let newSubnetname = document.getElementById(`subnet_name-input-${subnetId}`).value;
+            let newSubnetservice = document.getElementById(`subnet_service-input-${subnetId}`).value;
+
+
+            fetch(`/subnets/${subnetId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ subnet_name:newSubnetname, subnet_service:newSubnetservice})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`subnet_name-text-${subnetId}`).innerText = newSubnetname;
+                    document.getElementById(`subnet_name-text-${subnetId}`).style.display = "inline";
+                    document.getElementById(`subnet_name-input-${subnetId}`).style.display = "none";
+
+                    document.getElementById(`subnet_service-text-${subnetId}`).innerText = newSubnetservice;
+                    document.getElementById(`subnet_service-text-${subnetId}`).style.display = "inline";
+                    document.getElementById(`subnet_service-input-${subnetId}`).style.display = "none";
+
+                    document.getElementById(`edit-btn-${subnetId}`).style.display = "inline";
+                    document.getElementById(`save-btn-${subnetId}`).style.display = "none";
+                } else {
+                    alert("Failed to update Subnet.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+
 
         async function scanSubnet(subnetPrefix, subnetId, subnetMask) {
             const response = await fetch(`/scan_subnet/${subnetId}-${subnetMask}`, {  // Updated URL
@@ -155,6 +195,7 @@
         {% endfor %}
     </select><br>
     <hr>
+    <button class="red-btn" onclick="deleteSelected()">Delete Selected</button>
        <table>
         <thead>
             <tr>
@@ -180,10 +221,12 @@
                     </a>
                 </td>
                 <td>
-                    {{ subnet.subnet_name }}
+                    <span id="subnet_name-text-{{ subnet._id }}">{{ subnet.subnet_name }}</span>
+                    <input type="text" id="subnet_name-input-{{ subnet._id }}" value="{{ subnet.subnet_name }}" style="display: none;">
                 </td>
                 <td>
-                    {{ subnet.subnet_service }}
+                    <span id="subnet_service-text-{{ subnet._id }}">{{ subnet.subnet_service }}</span>
+                    <input type="text" id="subnet_service-input-{{ subnet._id }}" value="{{ subnet.subnet_service }}" style="display: none;">
                 </td>
                 <td>
                     {{ subnet.offline_utilization }} %
@@ -196,7 +239,8 @@
                 </td>
                 <td>
                     <button class="blue-btn" onclick="scanSubnet('{{ subnet.subnet_prefix }}', '{{ subnet.subnet_id }}', '{{ subnet.subnet_mask }}')">Scan</button>
-                    <button onclick="updateSubnet('{{ subnet.subnet_id }}', '{{ subnet.subnet_mask }}', '{{ subnet.subnet_name }}', '{{ subnet.subnet_service }}')">Modify</button>
+                    <button id="edit-btn-{{ subnet._id }}" onclick="enableEdit('{{ subnet._id }}')">Modify</button>
+                    <button id="save-btn-{{ subnet._id }}" onclick="saveChanges('{{ subnet._id }}')" style="display: none;">Save</button>
                     <button class="red-btn" onclick="deleteSubnet('{{ subnet._id }}')">Delete</button>
                 </td>
             </tr>

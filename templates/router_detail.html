@@ -35,7 +35,7 @@
         }
 
 
-        async function updateRouter(routerIP,routerName,routerUsername,routerVendor) {
+        async function updateRouter(routerId,routerName,routerUsername,routerVendor) {
             let name = prompt("Enter new name:", routerName);
             let username = prompt("Enter new username:", routerUsername);
             let password = prompt("Enter new password:");
@@ -46,16 +46,10 @@
                 return;
             }
 
-<!--            if (name === routerName && username === routerUsername && vendor === routerVendor) {-->
-<!--                alert("No changes detected. Update canceled.");-->
-<!--                return;-->
-<!--            }-->
-
-            const response = await fetch(`/routers/${routerIP}`, {  // Updated URL
+            const response = await fetch(`/routers/${routerId}`, {  // Updated URL
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    router_ip: routerIP,
                     router_name: name,
                     router_username: username,
                     router_password: password,
@@ -65,8 +59,75 @@
 
             const result = await response.json();
             alert(result.message || result.detail);
-            location.reload();        }
+            location.reload();
+        }
 
+        function enableEdit(routerId) {
+            document.getElementById(`name-text-${routerId}`).style.display = "none";
+            document.getElementById(`name-input-${routerId}`).style.display = "inline";
+
+            document.getElementById(`username-text-${routerId}`).style.display = "none";
+            document.getElementById(`username-input-${routerId}`).style.display = "inline";
+
+            document.getElementById(`password-text-${routerId}`).style.display = "none";
+            document.getElementById(`password-input-${routerId}`).style.display = "inline";
+
+            document.getElementById(`vendor-text-${routerId}`).style.display = "none";
+            let dropdown = document.getElementById(`vendor-select-${routerId}`);
+            dropdown.style.display = "inline";
+
+            // Set the dropdown to the current vendor value
+            dropdown.value = document.getElementById(`vendor-text-${routerId}`).innerText;
+
+
+
+            document.getElementById(`edit-btn-${routerId}`).style.display = "none";
+            document.getElementById(`save-btn-${routerId}`).style.display = "inline";
+
+        }
+
+    function saveChanges(routerId) {
+        let newName = document.getElementById(`name-input-${routerId}`).value;
+        let newUsername = document.getElementById(`username-input-${routerId}`).value;
+        let newPassword = document.getElementById(`password-input-${routerId}`).value;
+        let newVendor = document.getElementById(`vendor-select-${routerId}`).value;
+
+
+        fetch(`/routers/${routerId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ router_name: newName , router_username: newUsername, router_password: newPassword, router_vendor: newVendor})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById(`name-text-${routerId}`).innerText = newName;
+                document.getElementById(`name-text-${routerId}`).style.display = "inline";
+                document.getElementById(`name-input-${routerId}`).style.display = "none";
+
+                document.getElementById(`username-text-${routerId}`).innerText = newUsername;
+                document.getElementById(`username-text-${routerId}`).style.display = "inline";
+                document.getElementById(`username-input-${routerId}`).style.display = "none";
+
+                document.getElementById(`password-text-${routerId}`).innerText = "********";
+                document.getElementById(`password-text-${routerId}`).style.display = "inline";
+                document.getElementById(`password-input-${routerId}`).style.display = "none";
+
+                document.getElementById(`vendor-text-${routerId}`).innerText = newVendor;
+                document.getElementById(`vendor-text-${routerId}`).style.display = "inline";
+                document.getElementById(`vendor-select-${routerId}`).style.display = "none";
+
+
+                document.getElementById(`edit-btn-${routerId}`).style.display = "inline";
+                document.getElementById(`save-btn-${routerId}`).style.display = "none";
+            } else {
+                alert("Failed to update router.");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
     </script>
 <body>
     <h2>Router Details</h2>
@@ -75,6 +136,9 @@
                 <tr>
                     <th>Router IP</th>
                     <th>Name</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Vendor</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -85,12 +149,30 @@
                         {{ router.router_ip }}
                     </td>
                     <td>
-                        {{ router.router_name }}
+                        <span id="name-text-{{ router._id }}">{{ router.router_name }}</span>
+                        <input type="text" id="name-input-{{ router._id }}" value="{{ router.router_name }}" style="display: none;">
                     </td>
                     <td>
-                    <button class="blue-btn" onclick="testConnection('{{ router._id }}')">Test Connection</button>
-                    <button onclick="updateRouter('{{ router.router_ip }}', '{{ router.router_name }}', '{{ router.router_username }}', '{{ router.router_vendor }}')">Modify</button>
-                    <button class="red-btn" onclick="deleteRouter('{{ router._id  }}')">Delete</button>
+                        <span id="username-text-{{ router._id }}">{{ router.router_username }}</span>
+                        <input type="text" id="username-input-{{ router._id }}" value="{{ router.router_username }}" style="display: none;">
+                    </td>
+                    <td>
+                        <span id="password-text-{{ router._id }}"> ******** </span>
+                        <input type="text" id="password-input-{{ router._id }}" value="********" style="display: none;">
+                    </td>
+                    <td>
+                        <span id="vendor-text-{{ router._id }}">{{ router.router_vendor }}</span>
+                        <select id="vendor-select-{{ router._id }}" style="display: none;">
+                            <option value="Juniper" {% if router.router_vendor == "Juniper" %}selected{% endif %}>Juniper</option>
+                            <option value="Cisco" {% if router.router_vendor == "Cisco" %}selected{% endif %}>Cisco</option>
+                            <option value="Huawei" {% if router.router_vendor == "Huawei" %}selected{% endif %}>Huawei</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="blue-btn" onclick="testConnection('{{ router._id }}')">Test Connection</button>
+                        <button id="edit-btn-{{ router._id }}" onclick="enableEdit('{{ router._id }}')">Modify</button>
+                        <button id="save-btn-{{ router._id }}" onclick="saveChanges('{{ router._id }}')" style="display: none;">Save</button>
+                        <button class="red-btn" onclick="deleteRouter('{{ router._id  }}')">Delete</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -98,7 +180,9 @@
         </table>
     <hr>
     <a href="/">← Back to Home Page</a>
+
 </body>
+
 </html>
 
 

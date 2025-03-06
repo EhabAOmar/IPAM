@@ -54,11 +54,11 @@ def route_scan(route_prefix,router_vendor, **device_info):
         return {"status": False, "online_status": "", "online_utilization": None}
 
 def router_connection_test(router_vendor, **device_info):
-    if router_vendor == "juniper":
+    if router_vendor.lower() == "juniper":
         router_vendor = "junos"
-    elif router_vendor == "cisco":
+    elif router_vendor.lower() == "cisco":
         router_vendor = "ios"
-    elif router_vendor == "huawei":
+    elif router_vendor.lower() == "huawei":
         router_vendor = "huawei_vrp"
 
     try:
@@ -95,3 +95,16 @@ def get_subnet_utilization(main_subnet, subnet_dict):
     return utilization
 
 
+
+def validate_ip(ip):
+    try:
+        ipaddress.IPv4Address(ip)
+        return True
+    except ipaddress.AddressValueError:
+        return False
+
+def validate_prefix_length(prefixlen):
+    if int(prefixlen) in range(0,33):
+        return True
+    else:
+        return False
