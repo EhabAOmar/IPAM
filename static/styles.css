@@ -1,0 +1,140 @@
+/* Global Styles for the Page */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa; /* Light gray background */
+    color: #333; /* Dark gray text */
+    margin: 0;
+    padding: 20px;
+}
+
+/* Title Styling (Will Affect <h1> Instead) */
+h1 {
+    color: #154360;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+h2 {
+    color: #154360;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Styling for Other Text Elements */
+p {
+    font-size: 16px;
+    color: #555;
+}
+
+/* Custom Header Styling */
+.header {
+    background-color: #007BFF;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+
+table {
+    width: auto; /* Adjust width to fit content */
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px 12px; /* Adjust padding for better spacing */
+    text-align: left;
+    white-space: nowrap; /* Prevent text from wrapping */
+}
+
+th {
+    background-color: #1F618D;
+    color: white;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+a {
+    text-decoration: none;
+    color: #007BFF;
+    font-weight: bold;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button {
+    background-color: #1D8348;
+    color: white;
+    border: none;
+    padding: 6px 10px; /* Smaller padding to fit content */
+    cursor: pointer;
+    margin: 2px;
+    border-radius: 4px;
+    white-space: nowrap; /* Prevent buttons from wrapping */
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+.red-btn {
+    background-color: #CB4335;
+}
+
+.blue-btn {
+    background-color: #283747;
+}
+
+.gray-btn {
+    background-color: #AAB7B8;
+}
+
+.checkbox-cell {
+    text-align: center;
+    width: 50px; /* Ensure checkboxes are aligned properly */
+}
+
+
+<style>
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #fff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 5px;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<style>
+    .led {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .green { background-color: green; }
+    .red { background-color: red; }
+</style>

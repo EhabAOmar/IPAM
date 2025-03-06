@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Add Router/RR</title>
+    <script>
+        async function addRouter(event) {
+            event.preventDefault();
+
+            const routerData = {
+                router_ip: document.getElementById("router_ip").value,
+                router_name: document.getElementById("router_name").value,
+                router_username: document.getElementById("router_username").value,
+                router_password: document.getElementById("router_password").value,
+                router_vendor: document.getElementById("router_vendor").value
+            };
+
+            const response = await fetch("/routers/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(routerData)
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            window.location.href = "/";
+        }
+    </script>
+</head>
+<body>
+    <h2>Add Router</h2>
+
+    <form onsubmit="addRouter(event)">
+        <label>Router IP:  </label>
+        <input type="text" id="router_ip" required><br>
+
+        <label>Router Name:</label>
+        <input type="text" id="router_name" required><br>
+
+        <label>User Name:</label>
+        <input type="text" id="router_username" required><br>
+
+        <label>Password:</label>
+        <input type="password" id="router_password" required><br>
+
+        <label>Select Device Vendor:</label>
+        <select id="router_vendor" name="Router Vendor" required>
+            <option value="juniper">Juniper</option>
+            <option value="cisco">Cisco</option>
+            <option value="huawei">Huawei</option>
+        </select>
+
+        <button type="submit">Add Router</button>
+        <a href="/"><button class="red-btn" type="button">Cancel</button></a>
+    </form>
+</body>
+</html>

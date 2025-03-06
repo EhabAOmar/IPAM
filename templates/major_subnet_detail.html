@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Subnet Details</title>
+</head>
+
+    <script>
+        async function deleteSubnet(subnetId) {
+            if (!confirm("Are you sure you want to delete this subnet?")) return;
+
+            const response = await fetch("/subnets/", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify([subnetId])  // Sending as an array to match API
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();
+        }
+
+        async function deleteSelected() {
+            let selected = [...document.querySelectorAll(".subnet-checkbox:checked")].map(cb => cb.value);
+            if (selected.length === 0) {
+                alert("No subnets selected!");
+                return;
+            }
+
+            const response = await fetch("/subnets/", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(selected)
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();
+        }
+
+        async function updateSubnet(subnetId, subnetMask, subnetName, subnetService) {
+            let subnet_name = prompt("Enter new name:", subnetName);
+            let subnet_service = prompt("Enter new service:", subnetService);
+
+            if (!subnet_name || !subnet_service) {
+                alert("Update canceled.");
+                return;
+            }
+            if (subnet_name === subnetName && subnet_service === subnetService) {
+                alert("No changes detected. Update canceled.");
+                return;
+            }
+
+            const response = await fetch(`/subnets/${subnetId}-${subnetMask}`, {  // Updated URL
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subnet_name: subnet_name,
+                    subnet_service: subnet_service
+                })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();        }
+
+        async function scanSubnet(subnetPrefix, subnetId, subnetMask) {
+            const response = await fetch(`/scan_subnet/${subnetId}-${subnetMask}`, {  // Updated URL
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subnet_prefix: subnetPrefix
+                })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();        }
+    </script>
+
+
+<body>
+    <h2>Subnet Details</h2>
+       <table>
+            <thead>
+                <tr>
+                    <th>Major Subnet</th>
+                    <th>Name</th>
+                    <th>Service</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td> {{ major_subnet.subnet_prefix }} </td>
+                    <td> {{ major_subnet.subnet_name }} </td>
+                    <td> {{ major_subnet.subnet_service }} </td>
+                </tr>
+            </tbody>
+        </table>
+    <hr>
+    <a id="addSubnetLink" href="/subnets/{{ major_subnet.subnet_id }}-{{ major_subnet.subnet_mask }}/add-subnet">
+        <button id="addSubnetButton" class="blue-btn" disabled>+ Add Subnet</button>
+    </a>
+
+    <script>
+        function toggleButton() {
+            let subnetMask = parseInt("{{ major_subnet.subnet_mask }}"); // Get the subnet mask value from Jinja
+            let button = document.getElementById("addSubnetButton");
+            let link = document.getElementById("addSubnetLink");
+
+            if (subnetMask < 30) {
+                button.disabled = false;
+                link.style.pointerEvents = "auto"; // Enable link click
+                link.style.opacity = "1"; // Make it fully visible
+            } else {
+                button.disabled = true;
+                link.style.pointerEvents = "none"; // Disable link click
+                link.style.opacity = "0.5"; // Make it look disabled
+            }
+        }
+
+        // Run the function on page load
+        toggleButton();
+    </script>
+
+    <a id="breakButtonLink" href="/subnets/{{ major_subnet.subnet_id }}-{{ major_subnet.subnet_mask }}/break-subnet">
+        <button id="breakButton" class="blue-btn" disabled> Break into subnets length: </button>
+    </a>
+        <script>
+        function toggleButton() {
+            let subnetMask = parseInt("{{ major_subnet.subnet_mask }}"); // Get the subnet mask value from Jinja
+            let button = document.getElementById("breakButton");
+            let link = document.getElementById("breakButtonLink");
+
+            if (subnetMask < 30) {
+                button.disabled = false;
+                link.style.pointerEvents = "auto"; // Enable link click
+                link.style.opacity = "1"; // Make it fully visible
+            } else {
+                button.disabled = true;
+                link.style.pointerEvents = "none"; // Disable link click
+                link.style.opacity = "0.5"; // Make it look disabled
+            }
+        }
+
+        // Run the function on page load
+        toggleButton();
+    </script>
+
+    <select id="subnet_mask" required>
+        {% for i in range(major_subnet.subnet_mask|int + 1, 31) %}
+            <option value="/{{ i }}">/{{ i }}</option>
+        {% endfor %}
+    </select><br>
+    <hr>
+       <table>
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Subnet ID</th>
+                <th>Name</th>
+                <th>Service</th>
+                <th>Utilization</th>
+                <th>Online Status</th>
+                <th>Online Utilization</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for subnet in subnets %}
+            <tr>
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="subnet-checkbox" value="{{ subnet._id }}">
+                </td>
+                <td>
+                    <a href="/subnets/{{ subnet.subnet_id }}-{{ subnet.subnet_mask}}">
+                        {{ subnet.subnet_prefix }}
+                    </a>
+                </td>
+                <td>
+                    {{ subnet.subnet_name }}
+                </td>
+                <td>
+                    {{ subnet.subnet_service }}
+                </td>
+                <td>
+                    {{ subnet.offline_utilization }} %
+                </td>
+                <td>
+                    {{ subnet.online_status }}
+                </td>
+                <td>
+                    {{ subnet.online_utilization }} %
+                </td>
+                <td>
+                    <button class="blue-btn" onclick="scanSubnet('{{ subnet.subnet_prefix }}', '{{ subnet.subnet_id }}', '{{ subnet.subnet_mask }}')">Scan</button>
+                    <button onclick="updateSubnet('{{ subnet.subnet_id }}', '{{ subnet.subnet_mask }}', '{{ subnet.subnet_name }}', '{{ subnet.subnet_service }}')">Modify</button>
+                    <button class="red-btn" onclick="deleteSubnet('{{ subnet._id }}')">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+    <a href="/">← Back to Subnet List</a>
+</body>
+</html>
+

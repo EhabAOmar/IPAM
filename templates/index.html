@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>IPAM Manager</title>
+    <script>
+        async function deleteSubnet(subnetId) {
+            if (!confirm("Are you sure you want to delete this subnet?")) return;
+
+            const response = await fetch("/subnets/", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify([subnetId])  // Sending as an array to match API
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();
+        }
+
+        async function deleteSelected() {
+            let selected = [...document.querySelectorAll(".subnet-checkbox:checked")].map(cb => cb.value);
+            if (selected.length === 0) {
+                alert("No subnets selected!");
+                return;
+            }
+
+            const response = await fetch("/subnets/", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(selected)
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();
+        }
+
+        async function updateSubnet(subnetId, subnetMask) {
+            let subnet_name = prompt("Enter new name:");
+            let subnet_service = prompt("Enter new service:");
+
+            if (!subnet_name || !subnet_service) {
+                alert("Update canceled.");
+                return;
+            }
+
+            const response = await fetch(`/subnets/${subnetId}-${subnetMask}`, {  // Updated URL
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subnet_id: subnetId,
+                    subnet_mask: subnetMask,
+                    subnet_name: subnet_name,
+                    subnet_service: subnet_service
+                })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();        }
+
+        async function scanSubnet(subnetPrefix, subnetId, subnetMask) {
+
+            const response = await fetch(`/scan_subnet/${subnetId}-${subnetMask}`, {  // Updated URL
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subnet_prefix: subnetPrefix,
+                })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();        }
+    </script>
+</head>
+<body>
+    <h2>IPAM Manager</h2>
+
+    <a href="/add-major-subnet">
+        <button class="blue-btn">+ Add Major Subnet</button>
+    </a>
+    <a href="/add-router">
+        <button class="blue-btn">+ Add Router/RR </button>
+    </a>
+    <a href="/routers">
+        <button class="blue-btn"> List Routers/RRs </button>
+    </a>
+    <hr>
+    <h3>Major Subnets List:</h3>
+    <button class="red-btn" onclick="deleteSelected()">Delete Selected</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Subnet ID</th>
+                <th>Name</th>
+                <th>Service</th>
+                <th>Utilization</th>
+                <th>Online Status</th>
+                <th>Online Utilization</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for subnet in subnets %}
+            <tr>
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="subnet-checkbox" value="{{ subnet._id }}">
+                </td>
+                <td>
+                    <a href="/subnets/{{ subnet.subnet_id }}-{{ subnet.subnet_mask}}">
+                        {{ subnet.subnet_prefix }}
+                    </a>
+                </td>
+                <td>
+                    {{ subnet.subnet_name }}
+                </td>
+                <td>
+                    {{ subnet.subnet_service }}
+                </td>
+                <td>
+                    {{ subnet.offline_utilization }} %
+                </td>
+                <td>
+                    {{ subnet.online_status }}
+                </td>
+                <td>
+                    {{ subnet.online_utilization }} %
+                </td>
+                <td>
+                    <button class="blue-btn" onclick="scanSubnet('{{ subnet.subnet_prefix }}', '{{ subnet.subnet_id }}', '{{ subnet.subnet_mask }}')">Scan</button>
+                    <button onclick="updateSubnet('{{ subnet.subnet_id }}', '{{ subnet.subnet_mask }}')">Modify</button>
+                    <button class="red-btn" onclick="deleteSubnet('{{ subnet._id }}')">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

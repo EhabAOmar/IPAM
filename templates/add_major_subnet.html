@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Add Subnet</title>
+    <script>
+        async function addSubnet(event) {
+            event.preventDefault();
+
+            const subnetId = document.getElementById("subnet_id").value;
+            const subnetMask = document.getElementById("subnet_mask").value;
+            const subnetData = {
+                subnet_prefix: `${subnetId}/${subnetMask}`,
+                subnet_id: `${subnetId}`,
+                subnet_mask: `${subnetMask}`,
+                subnet_root: `${subnetId}/${subnetMask}`,
+                subnet_parent: "",
+                subnet_name: document.getElementById("subnet_name").value,
+                subnet_service: document.getElementById("subnet_service").value,
+                offline_utilization: 0.00,
+                online_status: "",
+                online_utilization: 0.00
+            };
+
+            const response = await fetch("/subnets/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(subnetData)
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            window.location.href = "/";
+        }
+    </script>
+</head>
+<body>
+    <h2>Add Subnet</h2>
+
+    <form onsubmit="addSubnet(event)">
+        <label>Subnet ID:</label>
+        <input type="text" id="subnet_id" required><br>
+
+        <label>Subnet Mask:</label>
+        <input type="text" id="subnet_mask" min="8" max="32" required><br>
+
+        <label>Name:</label>
+        <input type="text" id="subnet_name" required><br>
+
+        <label>Service:</label>
+        <input type="text" id="subnet_service" required><br>
+
+        <button type="submit">Add Subnet</button>
+        <a href="/"><button class="red-btn" type="button">Cancel</button></a>
+    </form>
+</body>
+</html>

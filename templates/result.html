@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h2>Results</h2>
+    {% if table_type == "inventory" %}
+        <h3>Hardware Inventory</h3>
+        <a href="/download/inventory">
+        <button>Download Inventory as Excel</button>
+        </a>
+        <table>
+            <tr>
+                <th>Device IP</th>
+                <th>Hostname</th>
+                <th>Vendor</th>
+                <th>Product ID</th>
+                <th>Serial Number</th>
+                <th>Product Description</th>
+                <th>EOS</th>
+                <th>Model</th>
+                <th>Version</th>
+            </tr>
+            {% for key, value in data.items() %}
+            <tr>
+    <!--            <td>{{ key }}</td>-->
+                {% for item in value %}
+                    <td style="white-space: pre-wrap;">{{ item }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    {% elif table_type == "version" %}
+        <h3>Version & Model</h3>
+        <a href="/download/version">
+        <button>Download Inventory as Excel</button>
+        </a>
+        <table>
+            <tr>
+                <th>Device IP</th>
+                <th>Hostname</th>
+                <th>Vendor</th>
+                <th>Model</th>
+                <th>Version</th>
+            </tr>
+            {% for key, value in data.items() %}
+            <tr>
+                {% for item in value %}
+                    <td style="white-space: pre-wrap;">{{ item }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No data available.</p>
+    {% endif %}
+    <a href="/">Go Back</a>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Router Details</title>
+</head>
+
+
+    <script>
+        async function deleteRouter(routerId) {
+            if (!confirm("Are you sure you want to delete this Router?")) return;
+
+            const response = await fetch(`/routers/${routerId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();
+        }
+
+
+        async function testConnection(routerId) {
+             const response = await fetch(`/routers/testconnection/${routerId}`, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+             });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();
+        }
+
+
+        async function updateRouter(routerIP,routerName,routerUsername,routerVendor) {
+            let name = prompt("Enter new name:", routerName);
+            let username = prompt("Enter new username:", routerUsername);
+            let password = prompt("Enter new password:");
+            let vendor = prompt("Enter new vendor:",routerVendor);
+
+            if (!name || !username || !password || !vendor) {
+                alert("Update canceled.");
+                return;
+            }
+
+<!--            if (name === routerName && username === routerUsername && vendor === routerVendor) {-->
+<!--                alert("No changes detected. Update canceled.");-->
+<!--                return;-->
+<!--            }-->
+
+            const response = await fetch(`/routers/${routerIP}`, {  // Updated URL
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    router_ip: routerIP,
+                    router_name: name,
+                    router_username: username,
+                    router_password: password,
+                    router_vendor: vendor
+                })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();        }
+
+    </script>
+<body>
+    <h2>Router Details</h2>
+       <table>
+            <thead>
+                <tr>
+                    <th>Router IP</th>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for router in routers %}
+                <tr>
+                    <td>
+                        {{ router.router_ip }}
+                    </td>
+                    <td>
+                        {{ router.router_name }}
+                    </td>
+                    <td>
+                    <button class="blue-btn" onclick="testConnection('{{ router._id }}')">Test Connection</button>
+                    <button onclick="updateRouter('{{ router.router_ip }}', '{{ router.router_name }}', '{{ router.router_username }}', '{{ router.router_vendor }}')">Modify</button>
+                    <button class="red-btn" onclick="deleteRouter('{{ router._id  }}')">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    <hr>
+    <a href="/">← Back to Home Page</a>
+</body>
+</html>
+
+
