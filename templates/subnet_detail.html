@@ -118,6 +118,24 @@
             const result = await response.json();
             alert(result.message || result.detail);
             location.reload();        }
+
+
+        async function breakSubnet(subnetPrefix) {
+             let breakPrefixlen = document.getElementById("breakPrefixlen").value;
+             const response = await fetch(`/break_subnet/`, {  // Updated URL
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subnet_prefix: subnetPrefix,
+                    break_prefixlen: breakPrefixlen
+                })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.detail);
+            location.reload();        }
+
+
     </script>
 
 
@@ -126,7 +144,7 @@
        <table>
             <thead>
                 <tr>
-                    <th>Subnet</th>
+                    <th>Main Subnet</th>
                     <th>Name</th>
                     <th>Service</th>
                 </tr>
@@ -150,7 +168,7 @@
             let button = document.getElementById("addSubnetButton");
             let link = document.getElementById("addSubnetLink");
 
-            if (subnetMask < 30) {
+            if (subnetMask < 32) {
                 button.disabled = false;
                 link.style.pointerEvents = "auto"; // Enable link click
                 link.style.opacity = "1"; // Make it fully visible
@@ -164,17 +182,15 @@
         // Run the function on page load
         toggleButton();
     </script>
-
-    <a id="breakButtonLink" href="/subnets/{{ subnet.subnet_id }}-{{ subnet.subnet_mask }}/break-subnet">
-        <button id="breakButton" class="blue-btn" disabled> Break into subnets length: </button>
-    </a>
+        |
+        <button id="breakButton" onclick="breakSubnet('{{ subnet.subnet_prefix }}')" class="blue-btn" disabled> Break into subnets: </button>
         <script>
         function toggleButton() {
             let subnetMask = parseInt("{{ subnet.subnet_mask }}"); // Get the subnet mask value from Jinja
             let button = document.getElementById("breakButton");
             let link = document.getElementById("breakButtonLink");
 
-            if (subnetMask < 30) {
+            if (subnetMask < 32) {
                 button.disabled = false;
                 link.style.pointerEvents = "auto"; // Enable link click
                 link.style.opacity = "1"; // Make it fully visible
@@ -189,11 +205,14 @@
         toggleButton();
     </script>
 
-    <select id="subnet_mask" required>
-        {% for i in range(subnet.subnet_mask|int + 1, 31) %}
+    <select id="breakPrefixlen" required>
+        {% for i in range(subnet.subnet_mask|int + 1, 33) %}
             <option value="/{{ i }}">/{{ i }}</option>
         {% endfor %}
-    </select><br>
+    </select>
+    |
+    <br>
+
     <hr>
     <button class="red-btn" onclick="deleteSelected()">Delete Selected</button>
        <table>

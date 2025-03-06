@@ -108,3 +108,19 @@ def validate_prefix_length(prefixlen):
         return True
     else:
         return False
+
+
+def get_break_subnet(main_subnet_prefix, prefixlen):
+    main_subnet = ipaddress.IPv4Network(main_subnet_prefix)
+    subnets_list = list(main_subnet.subnets(new_prefix=prefixlen))
+    child_subnets_list = []
+    for subnet in subnets_list:
+        data = {}
+        data["subnet_prefix"] = str(subnet)
+        data["subnet_id"] = str(subnet.network_address)
+        data["subnet_mask"] = str(subnet.prefixlen)
+        data["subnet_name"] = ""
+        data["subnet_service"] = ""
+        child_subnets_list.append(data)
+
+    return child_subnets_list

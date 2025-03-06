@@ -6,7 +6,7 @@ from bson import ObjectId
 from typing import List, Optional
 from fastapi.staticfiles import StaticFiles
 import ipaddress
-from utils import route_scan, router_connection_test, get_subnet_utilization, validate_ip, validate_prefix_length
+from utils import route_scan, router_connection_test, get_subnet_utilization, validate_ip, validate_prefix_length, get_break_subnet
 
 # data structure used is tree for the subnets, each subnet can have many children. The link between the node and its parent is "subnet_parent".
 
@@ -315,6 +315,37 @@ async def scan_subnet(data: dict):
         return {"message": "Subnet Scanned Successfully"}
 
     return {"message": "Connection to Router Failed"}
+
+
+
+# Scan a subnet
+@app.put("/break_subnet/")
+async def break_subnet(data: dict):
+    main_subnet_prefix= data['subnet_prefix']
+    break_prefixlen = data ['break_prefixlen']
+    main_subnet_id,main_subnet_mask = main_subnet_prefix.split("/")
+    break_prefixlen = int(break_prefixlen.strip("/")) # convert the prefix length from /xx string format to integer number xx
+
+    # Check if the subnet already has child subnets, at least one.
+    existing_child_subnet = await collection.find_one({"subnet_parent": main_subnet_prefix})
+
+    if  existing_child_subnet:
+        raise HTTPException(status_code=400, detail="Subnet already contains subset of subnets. You may delete them first before breaking it.")
+
+    child_subnets_list = get_break_subnet(main_subnet_prefix,break_prefixlen)
+    for child_subnet in child_subnets_list:
+        child_subnet_data = Subnet(
+        subnet_prefix=child_subnet["subnet_prefix"],
+        subnet_id = child_subnet["subnet_id"],
+        subnet_mask = child_subnet["subnet_mask"],
+        subnet_name = child_subnet["subnet_name"],
+        subnet_service = child_subnet["subnet_service"]
+        )
+        await add_subnet(main_subnet_id,main_subnet_mask,child_subnet_data)
+
+
+    return {"message": "Subnet Has Been Divided Successfully"}
+
 
 
 
