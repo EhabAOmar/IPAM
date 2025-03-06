@@ -86,27 +86,27 @@
        <table>
             <thead>
                 <tr>
-                    <th>Major Subnet</th>
+                    <th>Subnet</th>
                     <th>Name</th>
                     <th>Service</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td> {{ major_subnet.subnet_prefix }} </td>
-                    <td> {{ major_subnet.subnet_name }} </td>
-                    <td> {{ major_subnet.subnet_service }} </td>
+                    <td> {{ subnet.subnet_prefix }} </td>
+                    <td> {{ subnet.subnet_name }} </td>
+                    <td> {{ subnet.subnet_service }} </td>
                 </tr>
             </tbody>
         </table>
     <hr>
-    <a id="addSubnetLink" href="/subnets/{{ major_subnet.subnet_id }}-{{ major_subnet.subnet_mask }}/add-subnet">
+    <a id="addSubnetLink" href="/subnets/{{ subnet.subnet_id }}-{{ subnet.subnet_mask }}/add-subnet">
         <button id="addSubnetButton" class="blue-btn" disabled>+ Add Subnet</button>
     </a>
 
     <script>
         function toggleButton() {
-            let subnetMask = parseInt("{{ major_subnet.subnet_mask }}"); // Get the subnet mask value from Jinja
+            let subnetMask = parseInt("{{ subnet.subnet_mask }}"); // Get the subnet mask value from Jinja
             let button = document.getElementById("addSubnetButton");
             let link = document.getElementById("addSubnetLink");
 
@@ -125,12 +125,12 @@
         toggleButton();
     </script>
 
-    <a id="breakButtonLink" href="/subnets/{{ major_subnet.subnet_id }}-{{ major_subnet.subnet_mask }}/break-subnet">
+    <a id="breakButtonLink" href="/subnets/{{ subnet.subnet_id }}-{{ subnet.subnet_mask }}/break-subnet">
         <button id="breakButton" class="blue-btn" disabled> Break into subnets length: </button>
     </a>
         <script>
         function toggleButton() {
-            let subnetMask = parseInt("{{ major_subnet.subnet_mask }}"); // Get the subnet mask value from Jinja
+            let subnetMask = parseInt("{{ subnet.subnet_mask }}"); // Get the subnet mask value from Jinja
             let button = document.getElementById("breakButton");
             let link = document.getElementById("breakButtonLink");
 
@@ -150,7 +150,7 @@
     </script>
 
     <select id="subnet_mask" required>
-        {% for i in range(major_subnet.subnet_mask|int + 1, 31) %}
+        {% for i in range(subnet.subnet_mask|int + 1, 31) %}
             <option value="/{{ i }}">/{{ i }}</option>
         {% endfor %}
     </select><br>
@@ -205,7 +205,7 @@
     </table>
 
     <hr>
-    <a href="/">← Back to Subnet List</a>
+    <a href="/">← Back to Home Page</a>
 </body>
 </html>
 

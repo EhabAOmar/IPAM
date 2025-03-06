@@ -5,12 +5,10 @@ from fastapi.templating import Jinja2Templates
 from bson import ObjectId
 from typing import List, Optional
 from fastapi.staticfiles import StaticFiles
-from urllib.parse import quote
 import ipaddress
 from utils import route_scan, router_connection_test, get_subnet_utilization
 
-# data structure used is binary tree for the Major subnets, each Major subnet is divided into two sub-trees, left_subnet and right_subnet.
-# once a new subnet is created under the Major subnet, its branch is created upto the Major subnet.
+# data structure used is tree for the subnets, each subnet can have many children. The link between the node and its parent is "subnet_parent".
 
 
 app = FastAPI()
@@ -146,9 +144,9 @@ async def add_subnet_page(request: Request):
 
 
 # Major subnet detail page
-@app.get("/subnets/{major_subnet_id}-{major_subnet_mask}")
-async def get_major_subnet_detail(request: Request, major_subnet_id: str, major_subnet_mask: str):
-    major_subnet_prefix = f"{major_subnet_id}/{major_subnet_mask}"
+@app.get("/subnets/{subnet_id}-{subnet_mask}")
+async def get_major_subnet_detail(request: Request, subnet_id: str, subnet_mask: str):
+    major_subnet_prefix = f"{subnet_id}/{subnet_mask}"
     major_subnet = await collection.find_one({"subnet_prefix": major_subnet_prefix })
 
     if not major_subnet:
@@ -159,7 +157,7 @@ async def get_major_subnet_detail(request: Request, major_subnet_id: str, major_
 
     for subnet in all_subnets:
         subnet["_id"] = str(subnet["_id"])  # Convert ObjectId to string
-    return templates.TemplateResponse("major_subnet_detail.html", {"request": request, "major_subnet": major_subnet, "subnets": all_subnets})
+    return templates.TemplateResponse("subnet_detail.html", {"request": request, "subnet": major_subnet, "subnets": all_subnets})
 
 
 
