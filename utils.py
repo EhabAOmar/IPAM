@@ -1,6 +1,12 @@
 import ipaddress
 import re
 from napalm import get_network_driver
+import os
+import Cryptodome
+from Cryptodome.Cipher import AES
+import base64
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 def route_scan(route_prefix,router_vendor, **device_info):
@@ -124,3 +130,29 @@ def get_break_subnet(main_subnet_prefix, prefixlen):
         child_subnets_list.append(data)
 
     return child_subnets_list
+
+
+
+def encrypt_password(password):
+    # SECRET_KEY must be stored in OS as Environment variable. And must be 16 character long.
+    # You may set it here as a string for testing for example: SECRET_KEY = "012345678901234".encode()
+    SECRET_KEY = os.getenv("SECRET_KEY").encode()
+
+    if SECRET_KEY is None:
+        raise ValueError("SECRET_KEY is not set!. Please set it as an Environment Variable on your system with 16 Character.")
+    cipher = AES.new(SECRET_KEY, AES.MODE_EAX)
+    nonce = cipher.nonce  # Needed for decryption
+    ciphertext, tag = cipher.encrypt_and_digest(password.encode('utf-8'))
+    return base64.b64encode(nonce + ciphertext).decode('utf-8')
+
+def decrypt_password(encrypted_password):
+    encrypted_password = base64.b64decode(encrypted_password)
+    nonce = encrypted_password[:16]  # Extract nonce
+    ciphertext = encrypted_password[16:]  # Extract ciphertext
+
+    # Retrieving the SECRET_KEY from OS environment variables
+    SECRET_KEY = os.getenv("SECRET_KEY").encode()
+
+    cipher = AES.new(SECRET_KEY, AES.MODE_EAX, nonce=nonce)
+    decrypted_password = cipher.decrypt(ciphertext).decode('utf-8')
+    return decrypted_password

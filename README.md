@@ -9,13 +9,14 @@ Also the tool is used for reservation of the subnets by assigning a description 
 
 
 ## Prerequisites
-- Insall Mongodb and connect using port 27017.
+- Insall Mongodb and connect using default port 27017.
+- Set "SECRET_KEY" as environment variable in OS to be used as a master key for user password encryption and decryption. You may use any other method preferred to retreive the "SECRET_KEY" for encryption/decryption.
 
 
 ## Features
-- Reservation of subnets.
-- Provide utilization of the subnets in the tool.
-- Status of the subnet in live network and its utilization.
+- Web GUI for subnets management and reservation.
+- Utilization of the subnets inside the tool.
+- Status of the subnets in live network and its actual/online utilization.
 
 
 

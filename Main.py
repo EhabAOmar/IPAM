@@ -6,7 +6,7 @@ from bson import ObjectId
 from typing import List, Optional
 from fastapi.staticfiles import StaticFiles
 import ipaddress
-from utils import route_scan, router_connection_test, get_subnet_utilization, validate_ip, validate_prefix_length, get_break_subnet
+from utils import route_scan, router_connection_test, get_subnet_utilization, validate_ip, validate_prefix_length, get_break_subnet, encrypt_password, decrypt_password
 
 # data structure used is tree for the subnets, each subnet can have many children. The link between the node and its parent is "subnet_parent".
 
@@ -97,6 +97,7 @@ async def add_router(router: Router):
         raise HTTPException(status_code=400, detail="Limit exceeded, there are two Routers.")
 
     router_dict = router.model_dump()
+    router_dict['router_password'] = encrypt_password(router_dict['router_password'])
     await router_collection.insert_one(router_dict)
     return {"message": "Router added successfully"}
 
@@ -114,7 +115,7 @@ async def update_router(router_id: str, updateData: dict):
     update_data = {
         "router_name": updateData['router_name'],
         "router_username": updateData['router_username'],
-        "router_password": updateData['router_password'],
+        "router_password": encrypt_password(updateData['router_password']),
         "router_vendor": updateData['router_vendor']
     }
 
@@ -141,6 +142,7 @@ async def delete_router(router_id: str):
 async def testConnection(router_id: str):
     object_id = ObjectId(router_id)   # Convert to ObjectId
     router = await router_collection.find_one({"_id": object_id})
+    router['router_password'] = decrypt_password(router['router_password'])
 
     device_info = {"hostname": router['router_ip'], "username": router['router_username'], "password": router['router_password'] }
 
@@ -220,7 +222,9 @@ async def delete_subnets(subnet_ids: List[str]):
 
         for object_id in object_ids:
             subnet = await collection.find_one({"_id": object_id})
-            upper_subnet_prefixes.append(subnet['subnet_parent'])
+            upper_subnet_prefix = subnet['subnet_parent']
+            if upper_subnet_prefix not in upper_subnet_prefixes:
+                upper_subnet_prefixes.append(upper_subnet_prefix)
 
         result = await collection.delete_many({"_id": {"$in": object_ids}})
 
@@ -236,7 +240,7 @@ async def delete_subnets(subnet_ids: List[str]):
                 all_upper_children_subnets.append(child['subnet_prefix'])
 
             utilization = get_subnet_utilization(upper_subnet_prefix,all_upper_children_subnets)
-            utilization_result = await collection.update_one({"subnet_prefix": upper_subnet_prefix},{"$set": {"offline_utilization": utilization}})
+            await collection.update_one({"subnet_prefix": upper_subnet_prefix},{"$set": {"offline_utilization": utilization}})
 
 
         return {"message": f"Deleted {result.deleted_count} subnets"}
@@ -289,6 +293,7 @@ async def scan_subnet(data: dict):
 
     router = routers[0]
     router_vendor = router['router_vendor']
+    router['router_password'] = decrypt_password(router['router_password'])
     device_info = {"hostname": router['router_ip'], "username": router['router_username'], "password": router['router_password'] }
 
     # If connection failed to the main router, proceed to the backup router if exists.
@@ -330,7 +335,7 @@ async def break_subnet(data: dict):
     existing_child_subnet = await collection.find_one({"subnet_parent": main_subnet_prefix})
 
     if  existing_child_subnet:
-        raise HTTPException(status_code=400, detail="Subnet already contains subset of subnets. You may delete them first before breaking it.")
+        raise HTTPException(status_code=400, detail="Subnet already contains smaller subnet(s). You may delete them first before breaking it.")
 
     child_subnets_list = get_break_subnet(main_subnet_prefix,break_prefixlen)
     for child_subnet in child_subnets_list:
