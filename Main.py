@@ -192,21 +192,21 @@ async def add_major_subnet(subnet: Subnet):
 
 # Delete one or multiple subnets by ObjectId
 @app.delete("/subnets/")
-async def delete_subnets(subnet_ids: List[str]):
+async def delete_subnets(ids: List[str]):
 
     # Delete the subnet only if it has no child subnets
-    for subnet_id in subnet_ids:
-        object_id = ObjectId(subnet_id)
+    for id in ids:
+        object_id = ObjectId(id)
         subnet = await collection.find_one({"_id": object_id})
         subnet_prefix = subnet['subnet_prefix']
         child_subnets = await collection.find({"subnet_parent":subnet_prefix}).to_list()
 
         if child_subnets:
-            subnet_ids.remove(subnet_id)
+            ids.remove(id)
             raise HTTPException(status_code=400, detail="The subnet contains active smaller subnet(s). Cant' be deleted!")
 
-    if subnet_ids:
-        object_ids = [ObjectId(subnet_id) for subnet_id in subnet_ids]  # Convert String to ObjectId
+    if ids:
+        object_ids = [ObjectId(id) for id in ids]  # Convert String to ObjectId
 
         upper_subnet_prefixes = []
 
@@ -238,10 +238,10 @@ async def delete_subnets(subnet_ids: List[str]):
 
 
 # Update a subnet
-@app.put("/subnets/{subnet_id}")
-async def update_subnet(subnet_id: str, updateData: dict):
+@app.put("/subnets/{id}")
+async def update_subnet(id: str, updateData: dict):
 
-    object_id = ObjectId(subnet_id)  # Convert String to ObjectId
+    object_id = ObjectId(id)  # Convert String to ObjectId
     existing_subnet = await collection.find_one({"_id": object_id})
 
     if not existing_subnet:
@@ -254,7 +254,7 @@ async def update_subnet(subnet_id: str, updateData: dict):
 
 
 # Scan a subnet, which means check if the subnet exist in live network.
-@app.put("/scan_subnet/{subnet_id}-{subnet_mask}")
+@app.put("/scan_subnet/")
 async def scan_subnet(data: dict):
     subnet_prefix= data['subnet_prefix']
     existing_subnet = await collection.find_one({"subnet_prefix": subnet_prefix})
@@ -272,11 +272,14 @@ async def scan_subnet(data: dict):
     main_router['router_password'] = decrypt_password(main_router['router_password'])
     router_device_info = {"hostname": main_router['router_ip'], "username": main_router['router_username'], "password": main_router['router_password'] }
 
-    # If connection failed to the main router, proceed with the backup router if exists.
-    if (not router_connection_test(router_vendor, **router_device_info)) and not routers[1]:
+    connection_status_to_main_router = router_connection_test(router_vendor, **router_device_info)
+
+    # If connection failed to the main router, and no backup router, raise error.
+    if not connection_status_to_main_router and len(routers) == 1:
         raise HTTPException(status_code=400, detail="Can't Connect to Router")
 
-    if (not router_connection_test(router_vendor, **router_device_info)) and routers[1]:
+    # If connection failed to the main router, proceed with the backup router if exists.
+    if not connection_status_to_main_router and len(routers)==2:
         backup_router = routers[1]
         router_vendor = backup_router['router_vendor']
         backup_router['router_password'] = decrypt_password(backup_router['router_password'])

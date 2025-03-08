@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
     <title>Subnet Details</title>
-</head>
+
 
     <script>
         async function deleteSubnet(subnetId) {
@@ -115,19 +115,33 @@
 
 
 
-        async function scanSubnet(subnetPrefix, subnetId, subnetMask) {
-            const response = await fetch(`/scan_subnet/${subnetId}-${subnetMask}`, {  // Updated URL
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    subnet_prefix: subnetPrefix
-                })
-            });
+        async function scanSubnet(event, subnetPrefix) {
+            const button = event.target; // Get the clicked button
+            button.classList.add("button-spinning"); // Start spinning
+            button.disabled = true; // Prevent multiple clicks
+            button.textContent = "Scanning..."; // Optional: Change text
 
-            const result = await response.json();
-            alert(result.message || result.detail);
-            location.reload();        }
+            try {
+                const response = await fetch(`/scan_subnet/`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ subnet_prefix: subnetPrefix })
+                });
 
+                const result = await response.json();
+                if (result.message !== "Subnet Scanned Successfully") {
+                    alert(result.message || result.detail);
+                    }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Failed to scan subnet.");
+            } finally {
+                button.classList.remove("button-spinning"); // Stop spinning
+                button.disabled = false; // Re-enable button
+                button.textContent = "Scan"; // Reset button text
+                location.reload();
+            }
+        }
 
         async function breakSubnet(subnetPrefix) {
              let breakPrefixlen = document.getElementById("breakPrefixlen").value;
@@ -143,13 +157,12 @@
             const result = await response.json();
             alert(result.message || result.detail);
             location.reload();        }
-
-
     </script>
 
-
+</head>
 <body>
     <h2>Subnet Details</h2>
+    <hr>
        <table>
             <thead>
                 <tr>
@@ -278,7 +291,7 @@
                     {{ subnet.online_utilization }} %
                 </td>
                 <td>
-                    <button class="blue-btn" onclick="scanSubnet('{{ subnet.subnet_prefix }}', '{{ subnet.subnet_id }}', '{{ subnet.subnet_mask }}')">Scan</button>
+                    <button class="blue-btn" onclick="scanSubnet(event, '{{ subnet.subnet_prefix }}')">Scan</button>
                     <button id="edit-btn-{{ subnet._id }}" onclick="enableEdit('{{ subnet._id }}')">Modify</button>
                     <button id="save-btn-{{ subnet._id }}" onclick="saveChanges('{{ subnet._id }}')" style="display: none;">Save</button>
                     <button class="red-btn" onclick="deleteSubnet('{{ subnet._id }}')">Delete</button>

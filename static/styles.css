@@ -110,36 +110,23 @@ button:hover {
 }
 
 
-<style>
-.spinner {
+
+.button-spinning {
+    display: inline-block; /* Ensure transform applies */
+    pointer-events: none; /* Prevent multiple clicks */
+}
+
+.button-spinning::after {
+    content: " 🔄"; /* Adds a spinning icon */
     display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #fff;
-    border-top: 2px solid transparent;
-    border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-right: 5px;
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-</style>
-
-<style>
-    .led {
-        width: 15px;
-        height: 15px;
-        border-radius: 50%;
-        display: inline-block;
+    from {
+        transform: rotate(0deg);
     }
-    .green { background-color: green; }
-    .red { background-color: red; }
-</style>
-
-
-
-
-
+    to {
+        transform: rotate(360deg);
+    }
+}
