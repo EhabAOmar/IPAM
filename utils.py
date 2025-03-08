@@ -28,28 +28,27 @@ def route_scan(route_prefix,router_vendor, **device_info):
         route_network_prefixlen = route_network.prefixlen
 
         if router_vendor == "junos":
-            route_dict = device.get_route_to(route_prefix)
+            route_output = device.get_route_to(route_prefix)
+            route_list = route_output.keys()
+            route_list_str = " ".join(route_list)
+
 
         elif router_vendor == "ios":
             command = f"show ip route {route_network_id} {route_network_mask} longer-prefixes"
-            route_dict = device.cli([command], )[command]
+            route_list_str = device.cli([command], )[command]
 
-            pattern = "(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}"
-            route_dict_list = re.findall(pattern,route_dict)
 
         elif router_vendor == "huawei_vrp":
             command =f"display ip routing-table {route_network_id} {route_network_prefixlen} longer-match"
-            route_dict = device.cli([command], )[command]
+            route_list_str = device.cli([command], )[command]
 
-            pattern = "(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}"
-            route_dict_list = re.findall(pattern,route_dict)
 
-        if not route_dict:
+        if not route_list_str:
             return {"status": True,"online_status": "Inactive", "online_utilization": 0.00}
 
         else:
-            if router_vendor =="junos":
-                route_dict_list = list(route_dict.keys())
+            pattern = "(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}"
+            route_dict_list = re.findall(pattern, route_list_str)
 
             utilization = get_subnet_utilization(route_prefix, route_dict_list)
             return {"status": True, "online_status": "Active", "online_utilization": utilization}

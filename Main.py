@@ -40,7 +40,7 @@ class Subnet(BaseModel):
     subnet_root: str = None
     subnet_parent: str = None
     subnet_name: str = Field(...)
-    subnet_service: str = Field(...)
+    subnet_description: str = Field(...)
     offline_utilization: float = 0.00
     online_status: str = ""
     online_utilization: float = 0.00
@@ -208,12 +208,14 @@ async def delete_subnets(ids: List[str]):
     if ids:
         object_ids = [ObjectId(id) for id in ids]  # Convert String to ObjectId
 
+
+        # Gather Parent subnet IDs, to update their utilization later.
         upper_subnet_prefixes = []
 
         for object_id in object_ids:
             subnet = await collection.find_one({"_id": object_id})
             upper_subnet_prefix = subnet['subnet_parent']
-            if upper_subnet_prefix not in upper_subnet_prefixes:
+            if (upper_subnet_prefix not in upper_subnet_prefixes) and upper_subnet_prefix != "":
                 upper_subnet_prefixes.append(upper_subnet_prefix)
 
         result = await collection.delete_many({"_id": {"$in": object_ids}})
@@ -222,7 +224,7 @@ async def delete_subnets(ids: List[str]):
             raise HTTPException(status_code=400, detail="The subnet contains active smaller subnet(s). Cant' be deleted!")
 
 
-        # Update utilization for upper subnet
+        # Update utilization for parent subnets
         for upper_subnet_prefix in upper_subnet_prefixes:
             all_upper_children = await collection.find({"subnet_parent": upper_subnet_prefix}).to_list()
             all_upper_children_subnets = []
@@ -307,6 +309,17 @@ async def scan_subnet(data: dict):
     return {"message": "Connection to Router Failed"}
 
 
+# Scan a subnet, which means check if the subnet exist in live network.
+@app.put("/scan_subnets/")
+async def scan_subnets(ids: List[str]):
+    for id in ids:
+        object_id = ObjectId(id)
+        subnet = await collection.find_one({"_id": object_id})
+        subnet_prefix = subnet['subnet_prefix']
+        data = {"subnet_prefix": subnet_prefix}
+        await scan_subnet(data)
+
+
 
 # Break a subnet, means to divide a subnet into smaller subnets.
 @app.put("/break_subnet/")
@@ -329,7 +342,7 @@ async def break_subnet(data: dict):
         subnet_id = child_subnet["subnet_id"],
         subnet_mask = child_subnet["subnet_mask"],
         subnet_name = child_subnet["subnet_name"],
-        subnet_service = child_subnet["subnet_service"]
+        subnet_description = child_subnet["subnet_description"]
         )
         await add_subnet(main_subnet_id,main_subnet_mask,child_subnet_data)
 
@@ -339,10 +352,10 @@ async def break_subnet(data: dict):
 
 
 
-# Get subnet information under Major subnet
-@app.get("/subnets/{major_subnet_id}-{major_subnet_mask}/add-subnet")
-async def add_subnet_form(request: Request, major_subnet_id: str, major_subnet_mask: str):
-    return templates.TemplateResponse("add_subnet.html", {"request": request,"major_subnet_id": major_subnet_id, "major_subnet_mask": major_subnet_mask})
+# Get subnet information under subnet
+@app.get("/subnets/{main_subnet_id}-{main_subnet_mask}/add-subnet")
+async def add_subnet_form(request: Request, main_subnet_id: str, main_subnet_mask: str):
+    return templates.TemplateResponse("add_subnet.html", {"request": request,"main_subnet_id": main_subnet_id, "main_subnet_mask": main_subnet_mask})
 
 
 
@@ -414,7 +427,7 @@ async def add_subnet(upper_subnet_id: str, upper_subnet_mask: str, subnet: Subne
             "subnet_root": root_subnet,
             "subnet_parent": upper_subnet_prefix,
             "subnet_name": subnet.subnet_name,
-            "subnet_service": subnet.subnet_service,
+            "subnet_description": subnet.subnet_description,
             "offline_utilization": 0.00,
             "online_status": "",
             "online_utilization": 0.00

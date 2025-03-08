@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
-    <title>IPAM Manager</title>
+    <title>IPAM</title>
     <script>
         async function deleteSubnet(subnetId) {
             if (!confirm("Are you sure you want to delete this subnet?")) return;
@@ -40,9 +40,9 @@
 
         async function updateSubnet(subnetId, subnetMask) {
             let subnet_name = prompt("Enter new name:");
-            let subnet_service = prompt("Enter new service:");
+            let subnet_description = prompt("Enter new description:");
 
-            if (!subnet_name || !subnet_service) {
+            if (!subnet_name || !subnet_description) {
                 alert("Update canceled.");
                 return;
             }
@@ -54,7 +54,7 @@
                     subnet_id: subnetId,
                     subnet_mask: subnetMask,
                     subnet_name: subnet_name,
-                    subnet_service: subnet_service
+                    subnet_description: subnet_description
                 })
             });
 
@@ -75,10 +75,20 @@
             const result = await response.json();
             alert(result.message || result.detail);
             location.reload();        }
+
+
+        function SelectAll() {
+            let selectAllCheckbox = document.getElementById("select-all-checkbox");
+            let checkboxes = document.querySelectorAll(".subnet-checkbox");
+
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
     </script>
 </head>
 <body>
-    <h2>IPAM Manager</h2>
+    <h2>IP Address Manager</h2>
     <hr>
     <a href="/add-major-subnet">
         <button class="blue-btn">+ Add Major Subnet</button>
@@ -98,10 +108,22 @@
     <table>
         <thead>
             <tr>
-                <th>Select</th>
+                <style>
+                    th {
+                        text-align: center; /* Centers text and inline elements */
+                    }
+
+                    th input[type="checkbox"] {
+                        display: block;  /* Makes it a block element */
+                        margin: 0 auto;  /* Centers it horizontally */
+                    }
+                    </style>
+                <th>
+                    <input type="checkbox" id="select-all-checkbox" onclick="SelectAll()">
+                </th>
                 <th>Subnet ID</th>
                 <th>Name</th>
-                <th>Service</th>
+                <th>Description</th>
                 <th>Utilization</th>
                 <th>Online Status</th>
                 <th>Online Utilization</th>
@@ -123,7 +145,7 @@
                     {{ subnet.subnet_name }}
                 </td>
                 <td>
-                    {{ subnet.subnet_service }}
+                    {{ subnet.subnet_description }}
                 </td>
                 <td>
                     {{ subnet.offline_utilization }} %

@@ -18,7 +18,7 @@
                 subnet_root: `${subnetId}/${subnetMask}`,
                 subnet_parent: "",
                 subnet_name: document.getElementById("subnet_name").value,
-                subnet_service: document.getElementById("subnet_service").value,
+                subnet_description: document.getElementById("subnet_description").value,
                 offline_utilization: 0.00,
                 online_status: "",
                 online_utilization: 0.00
@@ -37,23 +37,67 @@
     </script>
 </head>
 <body>
-    <h2>Add Subnet</h2>
+    <h2>Add Major Subnet</h2>
 
-    <form onsubmit="addSubnet(event)">
-        <label>Subnet ID:</label>
-        <input type="text" id="subnet_id" required><br>
+    <form class="form-container" onsubmit="addSubnet(event, '{{ major_subnet_id }}', '{{ major_subnet_mask }}')">
+        <div class="form-group">
+            <label>Subnet ID:</label>
+            <input type="text" id="subnet_id" required>
+        </div>
 
-        <label>Subnet Mask:</label>
-        <input type="text" id="subnet_mask" min="0" max="32" required><br>
+        <div class="form-group">
+            <label>Subnet Length:</label>
+            <input type="text" id="subnet_mask" required>
+        </div>
 
-        <label>Name:</label>
-        <input type="text" id="subnet_name" required><br>
+        <div class="form-group">
+            <label>Subnet Name:</label>
+            <input type="text" id="subnet_name" required>
+        </div>
 
-        <label>Service:</label>
-        <input type="text" id="subnet_service" required><br>
+        <div class="form-group">
+            <label>Subnet Description:</label>
+            <input type="text" id="subnet_description" required>
+        </div>
 
-        <button type="submit">Add Subnet</button>
-        <a href="/"><button class="red-btn" type="button">Cancel</button></a>
-    </form>
+        <div class="button-group">
+            <button type="submit">Add Subnet</button>
+            <a href="/subnets/{{ major_subnet_id }}-{{ major_subnet_mask }}">
+                <button class="red-btn" type="button">Cancel</button>
+            </a>
+        </div>
+</form>
 </body>
+
+<style>
+
+.form-container {
+    max-width: 400px; /* Adjust width as needed */
+    margin: auto; /* Center form */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    width: 160px; /* Adjust label width */
+    font-weight: bold;
+}
+
+.form-group input {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+
+</style>
 </html>

@@ -41,6 +41,39 @@
             location.reload();
         }
 
+
+        async function scanSelected(event) {
+            const button = event.target; // Get the clicked button
+            button.classList.add("button-spinning"); // Start spinning
+            button.disabled = true; // Prevent multiple clicks
+            button.textContent = "Scanning..."; // Optional: Change text
+            try {
+                let selected = [...document.querySelectorAll(".subnet-checkbox:checked")].map(cb => cb.value);
+                if (selected.length === 0) {
+                    alert("No subnets selected!");
+                    return;
+                }
+
+                const response = await fetch("/scan_subnets/", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(selected)
+                });
+
+                const result = await response.json();
+                }
+            catch (error) {
+                console.error("Error:", error);
+                alert("Failed to scan subnet.");
+            }
+            finally {
+                button.classList.remove("button-spinning"); // Stop spinning
+                button.disabled = false; // Re-enable button
+                button.textContent = "Scan"; // Reset button text
+                location.reload();
+            }
+        }
+
         function SelectAll() {
             let selectAllCheckbox = document.getElementById("select-all-checkbox");
             let checkboxes = document.querySelectorAll(".subnet-checkbox");
@@ -73,8 +106,8 @@
             document.getElementById(`subnet_name-text-${subnetId}`).style.display = "none";
             document.getElementById(`subnet_name-input-${subnetId}`).style.display = "inline";
 
-            document.getElementById(`subnet_service-text-${subnetId}`).style.display = "none";
-            document.getElementById(`subnet_service-input-${subnetId}`).style.display = "inline";
+            document.getElementById(`subnet_description-text-${subnetId}`).style.display = "none";
+            document.getElementById(`subnet_description-input-${subnetId}`).style.display = "inline";
 
             document.getElementById(`edit-btn-${subnetId}`).style.display = "none";
             document.getElementById(`save-btn-${subnetId}`).style.display = "inline";
@@ -83,7 +116,7 @@
 
         function saveChanges(subnetId) {
             let newSubnetname = document.getElementById(`subnet_name-input-${subnetId}`).value;
-            let newSubnetservice = document.getElementById(`subnet_service-input-${subnetId}`).value;
+            let newSubnetDescription = document.getElementById(`subnet_description-input-${subnetId}`).value;
 
 
             fetch(`/subnets/${subnetId}`, {
@@ -91,7 +124,7 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ subnet_name:newSubnetname, subnet_service:newSubnetservice})
+                body: JSON.stringify({ subnet_name:newSubnetname, subnet_description:newSubnetDescription})
             })
             .then(response => response.json())
             .then(data => {
@@ -100,9 +133,9 @@
                     document.getElementById(`subnet_name-text-${subnetId}`).style.display = "inline";
                     document.getElementById(`subnet_name-input-${subnetId}`).style.display = "none";
 
-                    document.getElementById(`subnet_service-text-${subnetId}`).innerText = newSubnetservice;
-                    document.getElementById(`subnet_service-text-${subnetId}`).style.display = "inline";
-                    document.getElementById(`subnet_service-input-${subnetId}`).style.display = "none";
+                    document.getElementById(`subnet_description-text-${subnetId}`).innerText = newSubnetDescription;
+                    document.getElementById(`subnet_description-text-${subnetId}`).style.display = "inline";
+                    document.getElementById(`subnet_description-input-${subnetId}`).style.display = "none";
 
                     document.getElementById(`edit-btn-${subnetId}`).style.display = "inline";
                     document.getElementById(`save-btn-${subnetId}`).style.display = "none";
@@ -168,14 +201,14 @@
                 <tr>
                     <th>Main Subnet</th>
                     <th>Name</th>
-                    <th>Service</th>
+                    <th>Description</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td> {{ subnet.subnet_prefix }} </td>
                     <td> {{ subnet.subnet_name }} </td>
-                    <td> {{ subnet.subnet_service }} </td>
+                    <td> {{ subnet.subnet_description }} </td>
                 </tr>
             </tbody>
         </table>
@@ -236,6 +269,8 @@
     <br>
 
     <hr>
+    <button class="blue-btn" onclick="scanSelected(event)">Scan Selected</button>
+    |
     <button class="red-btn" onclick="deleteSelected()">Delete Selected</button>
        <table>
         <thead>
@@ -255,7 +290,7 @@
                 </th>
                 <th>Subnet ID</th>
                 <th>Name</th>
-                <th>Service</th>
+                <th>Description</th>
                 <th>Utilization</th>
                 <th>Online Status</th>
                 <th>Online Utilization</th>
@@ -278,8 +313,8 @@
                     <input type="text" id="subnet_name-input-{{ subnet._id }}" value="{{ subnet.subnet_name }}" style="display: none;">
                 </td>
                 <td>
-                    <span id="subnet_service-text-{{ subnet._id }}">{{ subnet.subnet_service }}</span>
-                    <input type="text" id="subnet_service-input-{{ subnet._id }}" value="{{ subnet.subnet_service }}" style="display: none;">
+                    <span id="subnet_description-text-{{ subnet._id }}">{{ subnet.subnet_description }}</span>
+                    <input type="text" id="subnet_description-input-{{ subnet._id }}" value="{{ subnet.subnet_description }}" style="display: none;">
                 </td>
                 <td>
                     {{ subnet.offline_utilization }} %

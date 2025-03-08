@@ -6,15 +6,15 @@
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
     <title>Add Subnet</title>
     <script>
-        async function addSubnet(event, majorSubnetId, majorSubnetMask) {
+        async function addSubnet(event, mainSubnetId, mainSubnetMask) {
             event.preventDefault();
 
             const subnetId = document.getElementById("subnet_id").value;
             const subnetMask = document.getElementById("subnet_mask").value;
             const subnet_name = document.getElementById("subnet_name").value;
-            const subnet_service = document.getElementById("subnet_service").value;
+            const subnet_description = document.getElementById("subnet_description").value;
 
-            if (!subnetId || !subnetMask || !subnet_name || !subnet_service) {
+            if (!subnetId || !subnetMask || !subnet_name || !subnet_description) {
                 alert("Please fill all fields.");
                 return;
             }
@@ -24,15 +24,15 @@
                 subnet_id: `${subnetId}`,
                 subnet_mask: `${subnetMask}`,
                 subnet_root: "",
-                subnet_parent: `${majorSubnetId}/${majorSubnetMask}`,
+                subnet_parent: `${mainSubnetId}/${mainSubnetMask}`,
                 subnet_name: `${subnet_name}`,
-                subnet_service: `${subnet_service}`,
+                subnet_description: `${subnet_description}`,
                 offline_utilization: 0.00,
                 online_status: "",
                 online_utilization: 0.00
             };
 
-            const response = await fetch(`/subnets/${majorSubnetId}-${majorSubnetMask}/add-subnet`, {
+            const response = await fetch(`/subnets/${mainSubnetId}-${mainSubnetMask}/add-subnet`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(subnetData)
@@ -40,29 +40,71 @@
 
             const result = await response.json();
             alert(result.message || result.detail);
-            window.location.href = `/subnets/${majorSubnetId}-${majorSubnetMask}`;
+            window.location.href = `/subnets/${mainSubnetId}-${mainSubnetMask}`;
         }
     </script>
 </head>
 <body>
-    <h2>Add Subnet Under {{ major_subnet_id }}/{{ major_subnet_mask }}</h2>
+    <h2>Add Subnet Under {{ main_subnet_id }}/{{ main_subnet_mask }}</h2>
 
-    <form onsubmit="addSubnet(event, '{{ major_subnet_id }}','{{ major_subnet_mask }}')">
-        <label>Subnet ID: </label>
-        <input type="text" id="subnet_id" required><br>
+    <form class="form-container" onsubmit="addSubnet(event, '{{ main_subnet_id }}', '{{ main_subnet_mask }}')">
+        <div class="form-group">
+            <label>Subnet ID:</label>
+            <input type="text" id="subnet_id" required>
+        </div>
 
-        <label>Subnet Mask: </label>
-        <input type="text" id="subnet_mask" required><br>
+        <div class="form-group">
+            <label>Subnet Length:</label>
+            <input type="text" id="subnet_mask" required>
+        </div>
 
-        <label>Subnet Name: </label>
-        <input type="text" id="subnet_name" required><br>
+        <div class="form-group">
+            <label>Subnet Name:</label>
+            <input type="text" id="subnet_name" required>
+        </div>
 
-        <label>Subnet Service:</label>
-        <input type="text" id="subnet_service" required><br>
+        <div class="form-group">
+            <label>Subnet Description:</label>
+            <input type="text" id="subnet_description" required>
+        </div>
 
-        <button type="submit">Add Subnet</button>
-        <a href="/subnets/{{ major_subnet_id }}-{{ major_subnet_mask }}"><button class="red-btn" type="button">Cancel</button></a>
+        <div class="button-group">
+            <button type="submit">Add Subnet</button>
+            <a href="/subnets/{{ main_subnet_id }}-{{ main_subnet_mask }}">
+                <button class="red-btn" type="button">Cancel</button>
+            </a>
+        </div>
     </form>
+<style>
 
+.form-container {
+    max-width: 400px; /* Adjust width as needed */
+    margin: auto; /* Center form */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    width: 160px; /* Adjust label width */
+    font-weight: bold;
+}
+
+.form-group input {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+
+</style>
 </body>
 </html>
