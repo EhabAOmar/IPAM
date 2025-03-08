@@ -10,11 +10,11 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 def route_scan(route_prefix,router_vendor, **device_info):
-    if router_vendor == "juniper":
+    if router_vendor == "Juniper":
         router_vendor = "junos"
-    elif router_vendor == "cisco":
+    elif router_vendor == "Cisco":
         router_vendor = "ios"
-    elif router_vendor == "huawei":
+    elif router_vendor == "Huawei":
         router_vendor = "huawei_vrp"
 
     try:
@@ -60,11 +60,11 @@ def route_scan(route_prefix,router_vendor, **device_info):
         return {"status": False, "online_status": "", "online_utilization": None}
 
 def router_connection_test(router_vendor, **device_info):
-    if router_vendor.lower() == "juniper":
+    if router_vendor == "Juniper":
         router_vendor = "junos"
-    elif router_vendor.lower() == "cisco":
+    elif router_vendor == "Cisco":
         router_vendor = "ios"
-    elif router_vendor.lower() == "huawei":
+    elif router_vendor == "Huawei":
         router_vendor = "huawei_vrp"
 
     try:

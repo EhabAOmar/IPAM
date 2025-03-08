@@ -41,6 +41,15 @@
             location.reload();
         }
 
+        function SelectAll() {
+            let selectAllCheckbox = document.getElementById("select-all-checkbox");
+            let checkboxes = document.querySelectorAll(".subnet-checkbox");
+
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
         async function deleteSelected() {
             let selected = [...document.querySelectorAll(".subnet-checkbox:checked")].map(cb => cb.value);
             if (selected.length === 0) {
@@ -218,7 +227,19 @@
        <table>
         <thead>
             <tr>
-                <th>Select</th>
+                <style>
+                    th {
+                        text-align: center; /* Centers text and inline elements */
+                    }
+
+                    th input[type="checkbox"] {
+                        display: block;  /* Makes it a block element */
+                        margin: 0 auto;  /* Centers it horizontally */
+                    }
+                    </style>
+                <th>
+                     <input type="checkbox" id="select-all-checkbox" onclick="SelectAll()">
+                </th>
                 <th>Subnet ID</th>
                 <th>Name</th>
                 <th>Service</th>

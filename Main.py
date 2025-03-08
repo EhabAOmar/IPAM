@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.templating import Jinja2Templates
 from bson import ObjectId
-from typing import List, Optional
+from typing import List
 from fastapi.staticfiles import StaticFiles
 import ipaddress
 from utils import route_scan, router_connection_test, get_subnet_utilization, validate_ip, validate_prefix_length, get_break_subnet, encrypt_password, decrypt_password
@@ -53,7 +53,7 @@ class Router(BaseModel):
     router_vendor: str = Field(...)
 
 
-
+# Home Page
 @app.get("/")
 async def serve_index(request: Request):
     subnets = await collection.find().to_list()
@@ -63,19 +63,18 @@ async def serve_index(request: Request):
 
 
 
-
+# List all Routers
 @app.get("/routers")
 async def list_routers(request: Request):
-    routers = await router_collection.find().to_list(length=100)
+    routers = await router_collection.find().to_list(length=2)
 
-    if not routers:
-        return {"error": "Router not found"}
     for router in routers:
-        router["_id"] = str(router["_id"])  # Convert ObjectId to string
+        router["_id"] = str(router["_id"])  # Convert Router ObjectId to String
 
     return templates.TemplateResponse("router_detail.html", {"request": request, "routers": routers})
 
 
+# Go to add router Page
 @app.get("/add-router")
 async def add_router_page(request: Request):
     return templates.TemplateResponse("add_router.html", {"request": request})
@@ -85,16 +84,15 @@ async def add_router_page(request: Request):
 # Add a new router
 @app.post("/routers/")
 async def add_router(router: Router):
-    existing_router = await router_collection.find_one({
-        "router_ip": router.router_ip
-    })
+    existing_router = await router_collection.find_one({"router_ip": router.router_ip})
+
     if existing_router:
         raise HTTPException(status_code=400, detail="Router already exists")
 
-    # Limit is 2 routers, one is main and other is backup
+    # Limit is two routers. One is main and other is backup
     all_existing_routers = await router_collection.find().to_list()
     if len(all_existing_routers) == 2:
-        raise HTTPException(status_code=400, detail="Limit exceeded, there are two Routers.")
+        raise HTTPException(status_code=400, detail="Limit exceeded, there are already two Routers.")
 
     router_dict = router.model_dump()
     router_dict['router_password'] = encrypt_password(router_dict['router_password'])
@@ -102,32 +100,26 @@ async def add_router(router: Router):
     return {"message": "Router added successfully"}
 
 
-# Update Router
+# Update Router. Update fields are Router's Name, Username, Password and Vendor.
 @app.put("/routers/{router_id}")
 async def update_router(router_id: str, updateData: dict):
-    object_id = ObjectId(router_id)  # Convert to ObjectId
+    object_id = ObjectId(router_id)  # Convert String to ObjectId
     router = await router_collection.find_one({"_id": object_id})
-
 
     if not router:
         raise HTTPException(status_code=404, detail="Router not found")
 
-    update_data = {
-        "router_name": updateData['router_name'],
-        "router_username": updateData['router_username'],
-        "router_password": encrypt_password(updateData['router_password']),
-        "router_vendor": updateData['router_vendor']
-    }
+    updateData['router_password'] = encrypt_password(updateData['router_password'])
 
-    await router_collection.update_one({"_id": router["_id"]},{"$set": update_data})
+    await router_collection.update_one({"_id": router["_id"]},{"$set": updateData})
     return {"success": True}
 
 
 
-# Delete Router by ObjectId
+# Delete Router
 @app.delete("/routers/{router_id}")
 async def delete_router(router_id: str):
-    object_id = ObjectId(router_id)   # Convert to ObjectId
+    object_id = ObjectId(router_id)   # Convert String to ObjectId
     result = await router_collection.delete_one({"_id": object_id})
 
     if result.deleted_count == 0:
@@ -137,10 +129,10 @@ async def delete_router(router_id: str):
 
 
 
-# Test router connection
+# Test Router Connection
 @app.get("/routers/testconnection/{router_id}")
 async def testConnection(router_id: str):
-    object_id = ObjectId(router_id)   # Convert to ObjectId
+    object_id = ObjectId(router_id)   # Convert String to ObjectId
     router = await router_collection.find_one({"_id": object_id})
     router['router_password'] = decrypt_password(router['router_password'])
 
@@ -157,30 +149,28 @@ async def testConnection(router_id: str):
 
 
 
-
-
-# Add Major subnet page
+# Add Major Subnet Page
 @app.get("/add-major-subnet")
 async def add_subnet_page(request: Request):
     return templates.TemplateResponse("add_major_subnet.html", {"request": request})
 
 
 
-# Major subnet detail page
+# Subnet Detail Page
 @app.get("/subnets/{subnet_id}-{subnet_mask}")
-async def get_major_subnet_detail(request: Request, subnet_id: str, subnet_mask: str):
-    major_subnet_prefix = f"{subnet_id}/{subnet_mask}"
-    major_subnet = await collection.find_one({"subnet_prefix": major_subnet_prefix })
+async def get_subnet_detail(request: Request, subnet_id: str, subnet_mask: str):
+    main_subnet_prefix = f"{subnet_id}/{subnet_mask}"
+    main_subnet = await collection.find_one({"subnet_prefix": main_subnet_prefix })
 
-    if not major_subnet:
+    if not main_subnet:
         raise HTTPException(status_code=404, detail="Subnet not found")
 
-    # Get all active subnets under the selected major subnet
-    all_subnets = await collection.find({"subnet_parent":major_subnet_prefix}).to_list()
+    # Get all active children subnets under the selected main subnet
+    all_subnets = await collection.find({"subnet_parent":main_subnet_prefix}).to_list()
 
     for subnet in all_subnets:
-        subnet["_id"] = str(subnet["_id"])  # Convert ObjectId to string
-    return templates.TemplateResponse("subnet_detail.html", {"request": request, "subnet": major_subnet, "subnets": all_subnets})
+        subnet["_id"] = str(subnet["_id"])  # Convert ObjectId to String
+    return templates.TemplateResponse("subnet_detail.html", {"request": request, "subnet": main_subnet, "subnets": all_subnets})
 
 
 
@@ -216,7 +206,7 @@ async def delete_subnets(subnet_ids: List[str]):
             raise HTTPException(status_code=400, detail="The subnet contains active smaller subnet(s). Cant' be deleted!")
 
     if subnet_ids:
-        object_ids = [ObjectId(subnet_id) for subnet_id in subnet_ids]  # Convert to ObjectId
+        object_ids = [ObjectId(subnet_id) for subnet_id in subnet_ids]  # Convert String to ObjectId
 
         upper_subnet_prefixes = []
 
@@ -251,33 +241,19 @@ async def delete_subnets(subnet_ids: List[str]):
 @app.put("/subnets/{subnet_id}")
 async def update_subnet(subnet_id: str, updateData: dict):
 
-    object_id = ObjectId(subnet_id)  # Convert to ObjectId
+    object_id = ObjectId(subnet_id)  # Convert String to ObjectId
     existing_subnet = await collection.find_one({"_id": object_id})
-
-
-    # subnet_prefix = f"{subnet_id}/{subnet_mask}"
-    # existing_subnet = await collection.find_one({"subnet_prefix": subnet_prefix})
-
-    subnet_name = updateData["subnet_name"]
-    subnet_service = updateData["subnet_service"]
-
 
     if not existing_subnet:
         raise HTTPException(status_code=404, detail="Subnet not found")
 
-    update_data = {
-        "subnet_name": subnet_name,
-        "subnet_service": subnet_service,
-    }
-
-    await collection.update_one({"_id": existing_subnet["_id"]},{"$set": update_data})
+    await collection.update_one({"_id": existing_subnet["_id"]},{"$set": updateData})
 
     return {"success": True}
-    # return {"message": "Subnet updated successfully"}
 
 
 
-# Scan a subnet
+# Scan a subnet, which means check if the subnet exist in live network.
 @app.put("/scan_subnet/{subnet_id}-{subnet_mask}")
 async def scan_subnet(data: dict):
     subnet_prefix= data['subnet_prefix']
@@ -289,21 +265,27 @@ async def scan_subnet(data: dict):
     routers = await router_collection.find().to_list()   #return the two routers
 
     if not routers:
-        return {"message": "Router not found, please add router first to scan online"}
+        raise HTTPException(status_code=404, detail="Router not found. Please add Router first")
 
-    router = routers[0]
-    router_vendor = router['router_vendor']
-    router['router_password'] = decrypt_password(router['router_password'])
-    device_info = {"hostname": router['router_ip'], "username": router['router_username'], "password": router['router_password'] }
+    main_router = routers[0]
+    router_vendor = main_router['router_vendor']
+    main_router['router_password'] = decrypt_password(main_router['router_password'])
+    router_device_info = {"hostname": main_router['router_ip'], "username": main_router['router_username'], "password": main_router['router_password'] }
 
-    # If connection failed to the main router, proceed to the backup router if exists.
-    if (not router_connection_test(router_vendor, **device_info)) and routers[1]:
-        router = routers[1]
-        router_vendor = router['router_vendor']
-        device_info = {"hostname": router['router_ip'], "username": router['router_username'], "password": router['router_password'] }
+    # If connection failed to the main router, proceed with the backup router if exists.
+    if (not router_connection_test(router_vendor, **router_device_info)) and not routers[1]:
+        raise HTTPException(status_code=400, detail="Can't Connect to Router")
 
+    if (not router_connection_test(router_vendor, **router_device_info)) and routers[1]:
+        backup_router = routers[1]
+        router_vendor = backup_router['router_vendor']
+        backup_router['router_password'] = decrypt_password(backup_router['router_password'])
+        router_device_info = {"hostname": backup_router['router_ip'], "username": backup_router['router_username'], "password": backup_router['router_password'] }
 
-    scan_result = route_scan(subnet_prefix, router_vendor, **device_info)
+        if not router_connection_test(router_vendor, **router_device_info):
+            raise HTTPException(status_code=400, detail="Can't Connect to Routers")
+
+    scan_result = route_scan(subnet_prefix, router_vendor, **router_device_info)
 
     # If route successfully was queried from the router, then update the scan results with online status and utilization.
     if scan_result['status']:
@@ -313,7 +295,7 @@ async def scan_subnet(data: dict):
         }
 
         await collection.update_one(
-            {"_id": existing_subnet["_id"]},  # Using MongoDB's `_id` to ensure correct document
+            {"_id": existing_subnet["_id"]},
             {"$set": update_data}
         )
 
@@ -323,7 +305,7 @@ async def scan_subnet(data: dict):
 
 
 
-# Scan a subnet
+# Break a subnet, means to divide a subnet into smaller subnets.
 @app.put("/break_subnet/")
 async def break_subnet(data: dict):
     main_subnet_prefix= data['subnet_prefix']
@@ -335,7 +317,7 @@ async def break_subnet(data: dict):
     existing_child_subnet = await collection.find_one({"subnet_parent": main_subnet_prefix})
 
     if  existing_child_subnet:
-        raise HTTPException(status_code=400, detail="Subnet already contains smaller subnet(s). You may delete them first before breaking it.")
+        raise HTTPException(status_code=400, detail="Subnet already contains smaller subnet(s). You should delete them first before breaking it.")
 
     child_subnets_list = get_break_subnet(main_subnet_prefix,break_prefixlen)
     for child_subnet in child_subnets_list:
@@ -349,7 +331,7 @@ async def break_subnet(data: dict):
         await add_subnet(main_subnet_id,main_subnet_mask,child_subnet_data)
 
 
-    return {"message": "Subnet Has Been Divided Successfully"}
+    return {"message": "Subnet has been divided successfully"}
 
 
 
@@ -391,7 +373,6 @@ async def add_subnet(upper_subnet_id: str, upper_subnet_mask: str, subnet: Subne
     root_subnet_network =  ipaddress.IPv4Network(root_subnet,strict=False)
     root_subnet_prefixlen = root_subnet_network.prefixlen
 
-    # Subnet already exists. Display a message.
     if existing_subnet:
         raise HTTPException(status_code=400, detail="Subnet Already Exists.")
 
@@ -411,7 +392,7 @@ async def add_subnet(upper_subnet_id: str, upper_subnet_mask: str, subnet: Subne
             child_network = ipaddress.IPv4Network(child['subnet_prefix'],strict=False)
             if child_network in list(new_subnet_network.subnets()):
                 # Update child parent to the new_subnet
-                result = await collection.update_one({"subnet_prefix":child['subnet_prefix']},{"$set":{"subnet_parent":subnet.subnet_prefix}})
+                await collection.update_one({"subnet_prefix":child['subnet_prefix']},{"$set":{"subnet_parent":subnet.subnet_prefix}})
 
 
         # Iterate to upper subnets towards root (if exist)
@@ -445,7 +426,7 @@ async def add_subnet(upper_subnet_id: str, upper_subnet_mask: str, subnet: Subne
             all_upper_children_subnets.append(child['subnet_prefix'])
 
         utilization = get_subnet_utilization(upper_subnet_prefix,all_upper_children_subnets)
-        result = await collection.update_one({"subnet_prefix": upper_subnet_prefix},{"$set": {"offline_utilization": utilization}})
+        await collection.update_one({"subnet_prefix": upper_subnet_prefix},{"$set": {"offline_utilization": utilization}})
 
         return {"message": "Subnet added successfully"}
 
