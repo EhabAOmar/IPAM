@@ -30,7 +30,10 @@ router_collection = db.routers
 # Serve static files from "static" folder
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+
 templates = Jinja2Templates(directory="templates")
+documentations = Jinja2Templates(directory="docs")
+
 
 # Pydantic model for validation
 class Subnet(BaseModel):
@@ -60,6 +63,17 @@ async def serve_index(request: Request):
     major_subnets = [subnet for subnet in subnets if subnet['subnet_prefix'] == subnet['subnet_root']]
     return templates.TemplateResponse("index.html", {"request": request, "subnets": major_subnets})
 
+
+
+# About Page
+@app.get("/docs/about")
+async def about(request: Request):
+    return documentations.TemplateResponse("about.html", {"request": request})
+
+# Help Page
+@app.get("/docs/help")
+async def help(request: Request):
+    return documentations.TemplateResponse("help.html", {"request": request})
 
 
 

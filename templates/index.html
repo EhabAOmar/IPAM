@@ -89,6 +89,19 @@
 </head>
 <body>
     <h2>IP Address Manager</h2>
+    <div class="right_container">
+        <a href="/docs/help">Help</a>
+        <a href="/docs/about">About</a>
+    </div>
+    <style>
+        .right_container {
+            position: fixed; /* Keeps it always in the top-right corner */
+            top: 10px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+        }
+    </style>
     <hr>
     <a href="/add-major-subnet">
         <button class="blue-btn">+ Add Major Subnet</button>
@@ -165,6 +178,7 @@
             {% endfor %}
         </tbody>
     </table>
+    <hr>
 
 </body>
 </html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Help</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; padding: 20px; line-height: 1.6; text-align: left; }
+        h1, h2 { color: #333; text-align: left;}
+        p { color: #555; }
+    </style>
+</head>
+<body>
+    <h2>Add Major Subnet</h2>
+    <ul>
+        <li>1 - Click on <b>"+ Add Major Subnet"</b> button </li>
+        <li>2 - Add Subnet's detail, including Subnet ID (example: 10.0.0.0), Subnet Length (example: 16), Subnet Name and Description</li>
+        <li>3 - Click <b>"Submit"</b></li>
+    </ul>
+    <img src="/static/Add_Major_Subnet.png" alt="Add Major Subnet Image" width="600" height="400">
+
+    <hr>
+    <h2>Add Router/RR</h2>
+    <ul>
+        <li>Router or Route-Reflector is used to scan/lookup for the subnet router in live network, and retrieves the subnet's status and utilization in production.</li>
+        <li>1 - Click on <b>"+ Add Router/RR"</b> button </li>
+        <li>2 - Add Router's detail, including Router IP (example: 172.16.1.10), Router Name, User-name, and Password for login (ensure the user account has enough privilege) and Vendor of the Router (supported: Juniper, Cisco and Huawei)</li>
+        <li>3 - Click <b>"Submit"</b></li>
+        <img src="/static/Add_Router.png" alt="Add Router Image" width="600" height="400">
+    </ul>
+    <hr>
+    <h2>Add Subnets</h2>
+    <ul>
+        <li>After creating the major subnet, add subsequent subnets as needed. Ensure the subnet belongs to the Major subnet range.</li>
+        <li>1 - Click on <b>"+ Add Subnet"</b> button </li>
+        <li>2 - Add Subnet's detail, including Subnet ID (example: 10.0.1.0), Subnet Length (example: 24), Subnet Name and Description</li>
+        <li>3 - Click <b>"Submit"</b></li>
+        <img src="/static/Add_Major_Subnet.png" alt="Add Major Subnet Image" width="600" height="400">
+
+    </ul>
+    <hr>
+    <h2>Break Subnet</h2>
+    <ul>
+        <li>For any subnet, you can break it into smaller subnets, be sure before breaking it, the subnet is empty on the application (i.e. no underneath subnets).</li>
+        <li>1 - On the subnet page, choose the smaller subnets length (for example: 25) </li>
+        <li>2 - Click on <b>"Break into subnets:"</b> button </li>
+        <img src="/static/Break_Subnet.png" alt="Break Subnet Image" width="600" height="400">
+
+    </ul>
+    <hr>
+        <h2>Scan Subnet</h2>
+    <ul>
+        <li>You can either scan one subnet (<b>"Scan"</b> button on the Actions tab right to the subnet) or select many subnets to scan <b>"Scan Selected" </b></li>
+        <li>1 - Click on <b>"Scan"</b> button next to the subnet</li>
+        <li>2 - Subnet will be scanned and online status and utilization updated</li>
+        <img src="/static/Scanning_Subnet.png" alt="Scan Subnet Image" width="600" height="350">
+
+    </ul>
+    <hr>
+    <a href="/">← Back to Home Page</a>
+</body>
+</html>
+
