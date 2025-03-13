@@ -126,6 +126,7 @@ def get_break_subnet(main_subnet_prefix, prefixlen):
         data["subnet_mask"] = str(subnet.prefixlen)
         data["subnet_name"] = ""
         data["subnet_service"] = ""
+        data["subnet_description"] = ""
         child_subnets_list.append(data)
 
     return child_subnets_list

@@ -12,6 +12,7 @@
             const subnetId = document.getElementById("subnet_id").value;
             const subnetMask = document.getElementById("subnet_mask").value;
             const subnet_name = document.getElementById("subnet_name").value;
+            const subnet_service = document.getElementById("subnet_service").value;
             const subnet_description = document.getElementById("subnet_description").value;
 
             if (!subnetId || !subnetMask || !subnet_name || !subnet_description) {
@@ -26,6 +27,7 @@
                 subnet_root: "",
                 subnet_parent: `${mainSubnetId}/${mainSubnetMask}`,
                 subnet_name: `${subnet_name}`,
+                subnet_service: `${subnet_service}`,
                 subnet_description: `${subnet_description}`,
                 offline_utilization: 0.00,
                 online_status: "",
@@ -74,6 +76,11 @@
         <div class="form-group">
             <label>Subnet Name:</label>
             <input type="text" id="subnet_name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Subnet Service:</label>
+            <input type="text" id="subnet_service" required>
         </div>
 
         <div class="form-group">

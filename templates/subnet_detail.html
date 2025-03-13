@@ -106,6 +106,9 @@
             document.getElementById(`subnet_name-text-${subnetId}`).style.display = "none";
             document.getElementById(`subnet_name-input-${subnetId}`).style.display = "inline";
 
+            document.getElementById(`subnet_service-text-${subnetId}`).style.display = "none";
+            document.getElementById(`subnet_service-input-${subnetId}`).style.display = "inline";
+
             document.getElementById(`subnet_description-text-${subnetId}`).style.display = "none";
             document.getElementById(`subnet_description-input-${subnetId}`).style.display = "inline";
 
@@ -116,6 +119,7 @@
 
         function saveChanges(subnetId) {
             let newSubnetname = document.getElementById(`subnet_name-input-${subnetId}`).value;
+            let newSubnetService = document.getElementById(`subnet_service-input-${subnetId}`).value;
             let newSubnetDescription = document.getElementById(`subnet_description-input-${subnetId}`).value;
 
 
@@ -124,7 +128,7 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ subnet_name:newSubnetname, subnet_description:newSubnetDescription})
+                body: JSON.stringify({ subnet_name:newSubnetname, subnet_service:newSubnetService, subnet_description:newSubnetDescription})
             })
             .then(response => response.json())
             .then(data => {
@@ -132,6 +136,10 @@
                     document.getElementById(`subnet_name-text-${subnetId}`).innerText = newSubnetname;
                     document.getElementById(`subnet_name-text-${subnetId}`).style.display = "inline";
                     document.getElementById(`subnet_name-input-${subnetId}`).style.display = "none";
+
+                    document.getElementById(`subnet_service-text-${subnetId}`).innerText = newSubnetService;
+                    document.getElementById(`subnet_service-text-${subnetId}`).style.display = "inline";
+                    document.getElementById(`subnet_service-input-${subnetId}`).style.display = "none";
 
                     document.getElementById(`subnet_description-text-${subnetId}`).innerText = newSubnetDescription;
                     document.getElementById(`subnet_description-text-${subnetId}`).style.display = "inline";
@@ -214,6 +222,7 @@
                 <tr>
                     <th>Main Subnet</th>
                     <th>Name</th>
+                    <th>Service</th>
                     <th>Description</th>
                 </tr>
             </thead>
@@ -221,6 +230,7 @@
                 <tr>
                     <td> {{ subnet.subnet_prefix }} </td>
                     <td> {{ subnet.subnet_name }} </td>
+                    <td> {{ subnet.subnet_service }} </td>
                     <td> {{ subnet.subnet_description }} </td>
                 </tr>
             </tbody>
@@ -303,6 +313,7 @@
                 </th>
                 <th>Subnet ID</th>
                 <th>Name</th>
+                <th>Service</th>
                 <th>Description</th>
                 <th>Utilization</th>
                 <th>Online Status</th>
@@ -324,6 +335,10 @@
                 <td>
                     <span id="subnet_name-text-{{ subnet._id }}">{{ subnet.subnet_name }}</span>
                     <input type="text" id="subnet_name-input-{{ subnet._id }}" value="{{ subnet.subnet_name }}" style="display: none;">
+                </td>
+                <td>
+                    <span id="subnet_service-text-{{ subnet._id }}">{{ subnet.subnet_service }}</span>
+                    <input type="text" id="subnet_service-input-{{ subnet._id }}" value="{{ subnet.subnet_service }}" style="display: none;">
                 </td>
                 <td>
                     <span id="subnet_description-text-{{ subnet._id }}">{{ subnet.subnet_description }}</span>

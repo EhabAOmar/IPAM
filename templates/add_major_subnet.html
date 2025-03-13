@@ -18,6 +18,7 @@
                 subnet_root: `${subnetId}/${subnetMask}`,
                 subnet_parent: "",
                 subnet_name: document.getElementById("subnet_name").value,
+                subnet_service: document.getElementById("subnet_service").value,
                 subnet_description: document.getElementById("subnet_description").value,
                 offline_utilization: 0.00,
                 online_status: "",
@@ -66,6 +67,11 @@
         <div class="form-group">
             <label>Subnet Name:</label>
             <input type="text" id="subnet_name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Subnet Service:</label>
+            <input type="text" id="subnet_service" required>
         </div>
 
         <div class="form-group">

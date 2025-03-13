@@ -43,6 +43,7 @@ class Subnet(BaseModel):
     subnet_root: str = None
     subnet_parent: str = None
     subnet_name: str = Field(...)
+    subnet_service: str = Field(...)
     subnet_description: str = Field(...)
     offline_utilization: float = 0.00
     online_status: str = ""
@@ -98,13 +99,17 @@ async def add_router_page(request: Request):
 # Add a new router
 @app.post("/routers/")
 async def add_router(router: Router):
+
+    if not validate_ip(router.router_ip):
+        raise HTTPException(status_code=400, detail="Wrong Router IP.")
+
     existing_router = await router_collection.find_one({"router_ip": router.router_ip})
 
     if existing_router:
         raise HTTPException(status_code=400, detail="Router already exists")
 
     # Limit is two routers. One is main and other is backup
-    all_existing_routers = await router_collection.find().to_list()
+    all_existing_routers =  await router_collection.find().to_list()
     if len(all_existing_routers) == 2:
         raise HTTPException(status_code=400, detail="Limit exceeded, there are already two Routers.")
 
@@ -234,9 +239,6 @@ async def delete_subnets(ids: List[str]):
 
         result = await collection.delete_many({"_id": {"$in": object_ids}})
 
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=400, detail="The subnet contains active smaller subnet(s). Cant' be deleted!")
-
 
         # Update utilization for parent subnets
         for upper_subnet_prefix in upper_subnet_prefixes:
@@ -250,6 +252,45 @@ async def delete_subnets(ids: List[str]):
 
 
         return {"message": f"Deleted {result.deleted_count} subnets"}
+
+
+
+
+# Delete one or multiple subnets by ObjectId
+@app.delete("/subnet/{id}")
+async def delete_subnet(id: str):
+
+    # Delete the subnet only if it has no child subnets
+    object_id = ObjectId(id)
+    subnet = await collection.find_one({"_id": object_id})
+    if not subnet:
+        raise HTTPException(status_code=404, detail="Subnet not found")
+
+    subnet_prefix = subnet['subnet_prefix']
+    child_subnets = await collection.find({"subnet_parent":subnet_prefix}).to_list()
+
+    if child_subnets:
+        raise HTTPException(status_code=400, detail="The subnet contains active smaller subnet(s). Cant' be deleted!")
+
+
+    # Gather Parent subnet IDs, to update their utilization later.
+
+    subnet = await collection.find_one({"_id": object_id})
+    upper_subnet_prefix = subnet['subnet_parent']
+    await collection.delete_many({"_id": {"$in": object_id}})
+
+    if upper_subnet_prefix != "":
+
+        all_upper_children = await collection.find({"subnet_parent": upper_subnet_prefix}).to_list()
+        all_upper_children_subnets = []
+        for child in all_upper_children:
+            all_upper_children_subnets.append(child['subnet_prefix'])
+
+        utilization = get_subnet_utilization(upper_subnet_prefix,all_upper_children_subnets)
+        await collection.update_one({"subnet_prefix": upper_subnet_prefix},{"$set": {"offline_utilization": utilization}})
+
+
+    return {"message": f"Subnet Deleted"}
 
 
 
@@ -356,6 +397,7 @@ async def break_subnet(data: dict):
         subnet_id = child_subnet["subnet_id"],
         subnet_mask = child_subnet["subnet_mask"],
         subnet_name = child_subnet["subnet_name"],
+        subnet_service = child_subnet["subnet_service"],
         subnet_description = child_subnet["subnet_description"]
         )
         await add_subnet(main_subnet_id,main_subnet_mask,child_subnet_data)
@@ -441,6 +483,7 @@ async def add_subnet(upper_subnet_id: str, upper_subnet_mask: str, subnet: Subne
             "subnet_root": root_subnet,
             "subnet_parent": upper_subnet_prefix,
             "subnet_name": subnet.subnet_name,
+            "subnet_service": subnet.subnet_service,
             "subnet_description": subnet.subnet_description,
             "offline_utilization": 0.00,
             "online_status": "",
