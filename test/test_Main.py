@@ -135,37 +135,35 @@ moc_mongo_subnet_dict = {"_id": "moc_id",
                    }
 
 ################################################################################################
-# Testing Main Page
+# ✅ Testing Main Page
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
 
 ################################################################################################
 # Testing Routers
+
+
+# ✅ Test: Add New Router Page
 def test_get_add_router():
     response = client.get("/add-router")
     assert response.status_code == 200
 
-
-# ✅ Test: Add New Rouer Page
-def test_get_add_router():
-    response = client.get("/add-router")
-    assert response.status_code == 200
 
 # ✅ Test: Adding Router Success
 def test_add_router_success(mock_mongo_router):
-    #mock_mongo.find_one.return_value = []  # Simulate existing different router
     response = client.post("/routers/", json=router_data_valid)
     assert response.status_code == 200
     assert response.json() == {"message": "Router added successfully"}
 
+
 # ✅ Test: Added New Router Already Exist
 def test_add_router_existing_ip(mock_mongo_router):
-    #Test adding a router that already exists
     mock_mongo_router.find_one.return_value = [router_data_valid]  # Simulate existing router
     response = client.post("/routers/", json=router_data_valid)
     assert response.status_code == 400
     assert response.json()["detail"] == "Router already exists"
+
 
 # ✅ Test: Add More than Routers Number Limit
 def test_add_router_limit_exceeded(mock_mongo_router):
@@ -178,21 +176,22 @@ def test_add_router_limit_exceeded(mock_mongo_router):
     assert response.status_code == 400
     assert response.json()["detail"] == "Limit exceeded, there are already two Routers."
 
+
 # ✅ Test: Router Input IP Invalid
 def test_add_router_invalid_ip():
-    #Test adding a Router with invalid IP address
     response = client.post("/routers/", json=router_data_invalid)
     assert response.status_code == 400
     assert response.json()["detail"] == "Wrong Router IP."
 
+
 # ✅ Test: Update Router Successfully
 def test_update_router_success(mock_mongo_router):
-    #Test adding a Router with invalid IP address
     mock_mongo_router.find_one.return_value = {"_id": ObjectId(router_id), **router_data_valid}  # Existing router
 
     response = client.put(f"/routers/{router_id}", json=update_router_data)
     assert response.status_code == 200
     assert response.json() == {"success": True}
+
 
 # ✅ Test: Update Router Not Found
 def test_update_router_not_found(mock_mongo_router):
@@ -202,6 +201,7 @@ def test_update_router_not_found(mock_mongo_router):
     assert response.status_code == 404
     assert response.json()["detail"] == "Router not found"
 
+
 # ✅ Test: Delete Router Successfully
 def test_delete_router_success(mock_mongo_router):
     mock_mongo_router.find_one.return_value = {"_id": ObjectId(router_id), **router_data_valid}  # Router exists
@@ -209,6 +209,7 @@ def test_delete_router_success(mock_mongo_router):
     response = client.delete(f"/routers/{router_id}")
     assert response.status_code == 200
     assert response.json() == {"message": "Router Deleted Successfully"}
+
 
 # ✅ Test: Delete Non-Existing Router
 def test_delete_router_not_found(mock_mongo_router):
@@ -220,14 +221,11 @@ def test_delete_router_not_found(mock_mongo_router):
 
 
 ################################################################################################
-
 # Testing Subnets
-
 
 
 # ✅ Test: Add Major Subnet Page
 def test_get_add_major_subnet():
-
     response = client.get("/add-major-subnet")
     assert response.status_code == 200
 
@@ -249,6 +247,7 @@ def test_get_subnet_detail_success(mock_mongo_subnet):
     assert "192.168.1.0/24" in response.text
 
 
+
 # ✅ Test: Subnet Doesn't Exist
 def test_get_subnet_detail_not_existing(mock_mongo_subnet):
     mock_mongo_subnet.find_one.return_value = None
@@ -258,9 +257,9 @@ def test_get_subnet_detail_not_existing(mock_mongo_subnet):
     assert response.status_code == 404
     assert response.json() == {"detail": "Subnet not found"}
 
+
 # ✅ Test: Add Major Subnet Successfully
 def test_add_major_subnet_success(mock_mongo_subnet):
-    """Test adding a new major subnet (successful case)"""
     mock_mongo_subnet.find_one.return_value = None  # No existing subnet
 
     response = client.post("/subnets/", json=subnet_dict)
@@ -268,9 +267,9 @@ def test_add_major_subnet_success(mock_mongo_subnet):
     assert response.status_code == 200
     assert response.json() == {"message": "Subnet added successfully"}
 
+
 # ✅ Test: The New Added Major Subnet Already Exist
 def test_add_major_subnet_already_exists(mock_mongo_subnet):
-    """Test adding a subnet that already exists"""
     mock_mongo_subnet.find_one.return_value = {"subnet_prefix": "192.168.1.0/24"}
 
     response = client.post("/subnets/", json=subnet_dict)
@@ -278,10 +277,9 @@ def test_add_major_subnet_already_exists(mock_mongo_subnet):
     assert response.status_code == 400
     assert response.json() == {"detail": "Major Subnet already exists"}
 
+
 # ✅ Test: Delete Subnet Successfully
 def test_delete_subnet_success(mock_mongo_subnet):
-    """Test deleting a subnet successfully"""
-
     mock_mongo_subnet.find_one.return_value = {"_id": moc_id, "subnet_prefix": "192.168.1.0/24", "subnet_parent":""}  # Found subnet
 
     mock_mongo_subnet.delete_many.return_value.deleted_count = 1
@@ -293,7 +291,6 @@ def test_delete_subnet_success(mock_mongo_subnet):
 
 # ✅ Test: Delete Subnet with Children Subnet
 def test_delete_subnet_with_children(mock_mongo_subnet):
-    """Test deleting a subnet that has child subnets (should fail)"""
     child_id = ObjectId()
     mock_mongo_subnet.find_one.return_value = {"_id": moc_id, "subnet_prefix": "192.168.1.0/24", "subnet_parent":""}  # Found subnet
 
@@ -307,7 +304,6 @@ def test_delete_subnet_with_children(mock_mongo_subnet):
 
 # ✅ Test: Delete Subnet Successfully (no Children Subnets)
 def test_update_subnet_success(mock_mongo_subnet):
-    """Test updating a subnet successfully"""
     mock_mongo_subnet.find_one.return_value = {"_id": moc_id}
 
     response = client.put(f"/subnets/{moc_id}", json={"subnet_name": "Updated Name"})
@@ -318,7 +314,6 @@ def test_update_subnet_success(mock_mongo_subnet):
 
 # ✅ Test: Update Subnet Not Found
 def test_update_subnet_not_found(mock_mongo_subnet):
-    """Test updating a non-existent subnet"""
     mock_mongo_subnet.find_one.return_value = None
     response = client.put(f"/subnets/{moc_id}", json={"subnet_name": "Updated Name"})
 
@@ -327,7 +322,6 @@ def test_update_subnet_not_found(mock_mongo_subnet):
 
 # ✅ Test: Scan Subnet Successfully
 def test_scan_subnet_success(mock_mongo_subnet,mock_mongo_router,mock_router_connection_test,mock_route_scan):
-    """Test scanning a subnet successfully"""
     mock_mongo_subnet.find_one.return_value = {"_id": moc_id, "subnet_prefix": "192.168.1.0/24"}
 
     async_mock_find = AsyncMock()
@@ -337,18 +331,16 @@ def test_scan_subnet_success(mock_mongo_subnet,mock_mongo_router,mock_router_con
     mock_router_connection_test.return_value = True
     mock_route_scan.return_value = {"status": True, "online_status": "Active", "online_utilization": 0.0}
 
-
     subnet_dict = {"subnet_prefix": "192.168.1.0/24"}
-
 
     response = client.put("/scan_subnet/", json=subnet_dict)
 
     assert response.status_code == 200
     assert response.json() == {"message": "Subnet Scanned Successfully"}
 
+
 # ✅ Test: Scan Subnet Not Found
 def test_scan_subnet_not_found(mock_mongo_subnet):
-    """Test scanning a subnet that does not exist"""
     mock_mongo_subnet.find_one.return_value = None
 
     response = client.put("/scan_subnet/", json=subnet_dict)
