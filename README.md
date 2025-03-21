@@ -21,7 +21,7 @@ Also the application is used for reservation of the subnets by assigning a descr
 
 
 
-![Alt text](static/Home-Page1.png)
+![Alt text](static/Home-Page.png)
 
 ## Installation
 git clone https://github.com/EhabAOmar/IPAM.git
