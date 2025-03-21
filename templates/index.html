@@ -39,6 +39,39 @@
         }
 
 
+        async function search() {
+            const InputSubnet = document.getElementById("subnetSearch").value.trim();
+            if (InputSubnet.length === 0) {
+                alert("No input subnet!");
+                return;
+            }
+            let regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})$/;
+            let match = InputSubnet.match(regex);
+
+            if (!match) {
+                alert("Invalid format! Use IP/MASK (e.g., 192.168.1.0/24)");
+                return;
+            }
+
+            let ip = match[1];
+            let mask = parseInt(match[2]);
+
+            if (mask < 0 || mask > 32) {
+                alert("Invalid subnet mask! Must be between 0 and 32.");
+                return;
+            }
+
+            let ipParts = ip.split('.').map(Number);
+
+            if (!ipParts.every(num => num >= 0 && num <= 255)) {
+                alert("Invalid IP address! Each octet must be between 0-255.");
+                return;
+            }
+
+            window.location.href = `/subnets/${encodeURIComponent(ip)}-${mask}`;
+        }
+
+
         function enableEdit(subnetId) {
             document.getElementById(`subnet_name-text-${subnetId}`).style.display = "none";
             document.getElementById(`subnet_name-input-${subnetId}`).style.display = "inline";
@@ -200,6 +233,10 @@
     <button class="blue-btn" onclick="scanSelected(event)">Scan Selected</button>
     |
     <button class="red-btn" onclick="deleteSelected()">Delete Selected</button>
+    |
+    <input type="text" id="subnetSearch">
+    <button class="blue-btn" onclick="search()">Search</button>
+
     <table>
         <thead>
             <tr>
