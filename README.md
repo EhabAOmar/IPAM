@@ -17,6 +17,7 @@ Also the application is used for reservation of the subnets by assigning a descr
 - Web GUI for subnets management and reservation.
 - Utilization of the subnets inside the tool.
 - Status of the subnets in live network and its actual/online utilization.
+- Search subnet in the database.
 
 
 
